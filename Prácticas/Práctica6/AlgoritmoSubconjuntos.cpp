@@ -66,13 +66,12 @@ void AlgoritmoSubconjuntos::correrAlgoritmo(GramaticaLibreDeContexto& gramatica)
 		procesados.insert(u);
 		q.pop();
 		int idU = kernelsVisitados[u];
-		for(char simbolo : alfabeto) {
+		for(char simbolo : gramatica.getAlfabeto()) {
 			set<ElementoLR> kernelActual = mover(u, simbolo);
 			// Llamamos a cerradura para que si aún no se ha calculado 
 			// para este kernel, se calcule y se guarde en el map
 			set<ElementoLR> conjuntoActual = cerradura(kernelActual, gramatica);
 			if(procesados.find(kernelActual) == procesados.end()) {
-				procesados.insert(kernelActual);
 				q.push({kernelActual,conjuntoActual});
 			}
 			transiciones[idU][simbolo] = kernelsVisitados[kernelActual];
@@ -80,3 +79,9 @@ void AlgoritmoSubconjuntos::correrAlgoritmo(GramaticaLibreDeContexto& gramatica)
 	}
 }
 
+map<int,set<ElementoLR>> AlgoritmoSubconjuntos::getSubconjuntos() {
+	return subconjuntos;
+}
+map<int,map<char,int>> AlgoritmoSubconjuntos::getTransiciones() {
+	return transiciones;
+}

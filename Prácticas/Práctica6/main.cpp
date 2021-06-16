@@ -2,6 +2,7 @@
 #include <string>
 #include "AlgoritmoSubconjuntos.hpp"
 #include "GramaticaLibreDeContexto.hpp"
+#include <set>
 
 
 using namespace std;
@@ -35,6 +36,8 @@ int main() {
 		cin >> c >> s;
 		gramatica.agregarProduccion(c, s);
 	}
-	algo.correrAlgoritmo(gramatica);
+	set<char> aux = gramatica.primero(string("B"));
+	for(char c : aux) cout << c << ' '; cout << '\n';
+	// algo.correrAlgoritmo(gramatica);
 	return 0;
 }

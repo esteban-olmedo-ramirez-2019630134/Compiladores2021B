@@ -16,6 +16,7 @@ public:
 	char getEstadoIndicador();
 	void moverIndicador();
 	bool operator<(const ElementoLR&)const;
+	pair<char,string> getProduccion();
 };
 
 #endif

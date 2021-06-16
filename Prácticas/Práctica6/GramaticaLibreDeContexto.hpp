@@ -5,6 +5,7 @@
 #include <vector>
 #include <utility>
 #include <string>
+#include <map>
 
 using namespace std;
 
@@ -14,6 +15,8 @@ private:
 	set<char> noTerminales;
 	char estadoInicial;
 	vector<pair<char,string>> producciones;
+	set<char> siguiente(char,map<char,set<char>>&);
+	vector<char> alfabeto;
 public:
 	GramaticaLibreDeContexto();
 	bool esTerminal(char);
@@ -25,7 +28,8 @@ public:
 	vector<pair<char,string>> getProducciones();
 	void agregarProduccion(char, string);
 	set<char> siguiente(char);
-	set<char> primero(char);
+	set<char> primero(string);
+	vector<char> getAlfabeto();
 };
 
 

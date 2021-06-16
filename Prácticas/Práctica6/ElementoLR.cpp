@@ -20,3 +20,7 @@ bool ElementoLR::operator<(const ElementoLR& lr) const{
 	}
 	return this -> produccion.first < lr.produccion.first;
 }
+
+pair<char,string> ElementoLR::getProduccion() {
+	return this -> produccion;
+}

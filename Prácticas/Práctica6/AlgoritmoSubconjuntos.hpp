@@ -13,7 +13,6 @@ using namespace std;
 
 class AlgoritmoSubconjuntos{
 private:
-	vector<char> alfabeto;
 	map<set<ElementoLR>,int> kernelsVisitados;
 	map<int,set<ElementoLR>> subconjuntos;
 	int idKernelActual;
@@ -25,6 +24,8 @@ public:
 	void preprocesar(vector<pair<char,string>>&);
 	set<ElementoLR> cerradura(set<ElementoLR>,GramaticaLibreDeContexto&);
 	set<ElementoLR> mover(set<ElementoLR>, char);
+	map<int,set<ElementoLR>> getSubconjuntos();
+	map<int,map<char,int>> getTransiciones();
 };
 
 #endif
