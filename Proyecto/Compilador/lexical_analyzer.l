@@ -20,8 +20,11 @@ SUFFIX (u|U|L|l)*
  /* reserved words */
 "set size"        { return SET; }
 "smarttile"  { return SMARTTILE; }
+"tileset"    { return TILESET; }
 "tile"       { return TILE; }
 "section"    { return SECTION; }
+"name" 	     { return NAME; }
+"default"    { return DEFAULT; }
 "sasageyo"   { return MAIN; }
 "end"        { return END; }
 "new"        { return NEW; }
@@ -30,33 +33,100 @@ SUFFIX (u|U|L|l)*
 "while"      { return WHILE; }
 "if"         { return IF; }
 "container"  { return CONTAINER; }
-"int"        { yylval.INT -> type = _INT_; return INT; }
-"char"       { yylval.CHAR -> type = _CHAR_; return CHAR; }
-"string"     { yylval.STRING -> type = _STRING_; return STRING; }
-"float"      { yylval.FLOAT -> type = _FLOAT_; return FLOAT; }
-"bool"       { yylval.BOOL -> type  = _BOOL_; return BOOL; }
-"double"     { yylval.DOUBLE -> type = _DOUBLE_; return DOUBLE;}
-"long"       { yylval.LONG -> type = _LONG_; return LONG; }
+"int"        { 
+	yylval.INT = (symrec*)malloc(sizeof(symrec));
+	yylval.INT -> type = _INT_; 
+	return INT; 
+	}
+"char"       { 
+	yylval.CHAR = (symrec*)malloc(sizeof(symrec));
+	yylval.CHAR -> type = _CHAR_; 
+	return CHAR; 
+	}
+"string"     { 
+	yylval.STRING = (symrec*)malloc(sizeof(symrec));
+	yylval.STRING -> type = _STRING_; 
+	return STRING; 
+	}
+"float"      { 
+	yylval.FLOAT = (symrec*)malloc(sizeof(symrec));
+	yylval.FLOAT -> type = _FLOAT_; 
+	return FLOAT; 
+	}
+"bool"       { 
+	yylval.BOOL = (symrec*)malloc(sizeof(symrec));
+	yylval.BOOL -> type  = _BOOL_; 
+	return BOOL; 
+	}
+"double"     { 
+	yylval.DOUBLE = (symrec*)malloc(sizeof(symrec));
+	yylval.DOUBLE -> type = _DOUBLE_; 
+	return DOUBLE;
+	}
+"long"       { 
+	yylval.LONG = (symrec*)malloc(sizeof(symrec));
+	yylval.LONG -> type = _LONG_; 
+	return LONG; 
+	}
 "else"	     { return ELSE;}
 "RandomWalk" { return ALGORITHM; }
 "DirectionalTunnel" { return ALGORITHM; }
 "rule"	     { return RULE; }
-"++"  { return PLUSPLUS; }
 "--"  { return MINUSMINUS; }
+"++"  { return PLUSPLUS; }
+"=="  { yylval.EQ = EQ; return EQ; }
 
  /* constans */
-"true"|"false"                     { return CONST_BOOL; }
-{DIGIT}+L                          { return CONST_LONG; }
-{DIGIT}+                           { /*yylval.CONST_INT -> value._int = atoi(yytext);*/ return CONST_INT; }
-{DIGIT}+"."{DIGIT}+D?          	   { yylval.CONST_DOUBLE -> value._double = atof(yytext); return CONST_DOUBLE; }
-{DIGIT}+"."{DIGIT}+F               { return CONST_FLOAT; }
-{LETTER}({LETTER}|{DIGIT}|[_\-$])* { 
+"true"|"false"                     {
+	yylval.CONST_BOOL = (symrec*)malloc(sizeof(symrec));
+	if(strcmp(yytext, "true") == 0){
+		yylval.CONST_BOOL -> value._bool = 1; 
+	}
+	else {
+		yylval.CONST_BOOL -> value._bool = 0;
+	}
+	return CONST_BOOL; 
+	}
+{DIGIT}+L                          { 
+	yylval.CONST_LONG = (symrec*)malloc(sizeof(symrec));
+	yylval.CONST_LONG -> value._long = atoi(yytext); 
+	return CONST_LONG; 
+	}
+{DIGIT}+                           { 
+	yylval.CONST_INT = (symrec*)malloc(sizeof(symrec));
+	yylval.CONST_INT -> value._int = atoi(yytext); 
+	return CONST_INT; 
+	}
+{DIGIT}+"."{DIGIT}+f               { 
+	yylval.CONST_FLOAT = (symrec*)malloc(sizeof(symrec));
+	yylval.CONST_FLOAT -> value._float = atof(yytext); 
+	return CONST_FLOAT; 
+	}
+
+{DIGIT}+"."{DIGIT}+D?          	   { 
+	yylval.CONST_DOUBLE = (symrec*)malloc(sizeof(symrec));
+	yylval.CONST_DOUBLE -> value._double = atof(yytext); 
+	return CONST_DOUBLE; 
+	}
+{LETTER}({LETTER}|{DIGIT}|[_$])* { 
 	yylval.IDENTIFIER = (symrec*)malloc(sizeof(symrec));
 	strcpy(yylval.IDENTIFIER -> name, yytext); 
 	return IDENTIFIER; 
 	}
-\"(\\.|[^\\"])*\"                { return CONST_STRING; }
-'(\\.|[^\\"])*'                  { return CONST_CHAR; }
+\"(\\.|[^\\"])*\"                { 
+	yylval.CONST_STRING  = (symrec*)malloc(sizeof(symrec));
+	yytext++;
+	int len = strlen(yytext);
+	yytext[len-1] = '\0';
+	yylval.CONST_STRING -> value._string = (char*)malloc(sizeof(char)*(len-1));
+	strcpy(yylval.CONST_STRING -> value._string, yytext);
+	return CONST_STRING; 
+	}
+'(\\.|[^\\"])*'            	{
+	yylval.CONST_CHAR = (symrec*)malloc(sizeof(symrec));
+	yylval.CONST_CHAR -> value._char = yytext[1];
+	return CONST_CHAR; 
+	}
 
  /* operators */
 "+"  { return '+'; }
@@ -65,14 +135,14 @@ SUFFIX (u|U|L|l)*
 "-"  { return '-'; }
 "%"  { return '%'; }
 "="  { return '='; }
-"<"  { return GREATER; }
-">"  { return LESS; }
-">=" { return GREATER_EQ; }
-"<=" { return LESS_EQ; }
-"&&" { return AND_OP; }
+"<"  { yylval.LESS = LESS; return LESS; }
+">"  { yylval.GREATER = GREATER; return GREATER; }
+">=" { yylval.GREATER_EQ = GREATER_EQ; return GREATER_EQ; }
+"<=" { yylval.LESS_EQ = LESS_EQ; return LESS_EQ; }
+"&&" { yylval.AND_OP = AND_OP; return AND_OP; }
 "!"  { return '!'; }
-"!=" { return NEQ; }
-"||" { return OR_OP; }
+"!=" { yylval.NEQ = NEQ; return NEQ; }
+"||" { yylval.OR_OP = OR_OP; return OR_OP; }
 ";"  { return ';'; }
 ","  { return ','; }
 "("  { return '('; }

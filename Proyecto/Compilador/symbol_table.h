@@ -16,11 +16,15 @@ typedef struct algo {
 }Algorithm;
 
 typedef struct tile {
-	char *nombre;
+	char *name;
 	char *tileset;
 	int rule[3][3];
 	int flag;
 }Tile;
+typedef struct smarttile {
+	int count;
+	Tile *tiles;
+}Smarttile;
 typedef struct symrec {
 	char name[256]; 
 	int type;  
@@ -33,6 +37,7 @@ typedef struct symrec {
 		int _bool;
 		long long int _long;
 		float _float;
+		int _vector[3];
 		Algorithm algo;
 		Tile tile;
 	} value;

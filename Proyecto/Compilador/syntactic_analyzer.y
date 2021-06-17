@@ -9,6 +9,7 @@
 	#define _DOUBLE_ 5
 	#define _CHAR_ 6
 	#define _STRING_ 7
+	#define _TILE_ 8
 	void yyerror(const char* message){
 		printf("%s\n", message);
 		exit(1);
@@ -28,18 +29,20 @@
 %token <symrec*> INT FLOAT DOUBLE LONG BOOL CHAR STRING
 %token <symrec*> CONST_CHAR CONST_BOOL CONST_LONG
 %token <symrec*> CONST_INT CONST_FLOAT CONST_DOUBLE CONST_STRING
-%nterm <symrec*> variable_declaration variable type expression condition constant
-%nterm <int> logical_operator
+%nterm <symrec*> variable_declaration variable type expression condition constant vector rule
+%nterm <int> logical_operator comparation_operator
+%nterm <Tile*> tile_content
 
 %token FUNCTION
 %token MAIN
 %token ALGORITHM 
 %token PLUSPLUS MINUSMINUS
 %token FOR WHILE IF ELSE
-%token RULE
-%token SET SMARTTILE TILE NAME PATH MAPWIDTH SECTION
+%token <symrec*> RULE
+%token SET SMARTTILE TILE SECTION
 %token _BEGIN END NEW JOIN CONTAINER
-%token <int> GREATER_EQ LESS_EQ AND_OP OR_OP NEQ GREATER LESS
+%token NAME TILESET DEFAULT
+%token <int> GREATER_EQ LESS_EQ AND_OP OR_OP NEQ GREATER LESS EQ
 
 %precedence '='
 %left '-' '+'
@@ -50,7 +53,7 @@
 // declaracion inicial main
 input
 	: %empty
-	| set_size initial_declaration main_function
+	| set_size initial_declaration main_function 		{printf("SIUUUUUUUU!!!!!!\n");}
 	;
 set_size
 	: SET '=''{' CONST_INT','CONST_INT'}'';' 		{printf("Declaracion de tamanio\n");}
@@ -71,20 +74,42 @@ tiles_list
 	;
 
 tile
-	: TILE IDENTIFIER '{'tile_content rule'}'	{printf("Tile\n");}
+	: TILE IDENTIFIER '{'tile_content rule'}'	{
+			if(getsym($2 -> name) != NULL) {
+				printf("60 anios, una protesis\n");
+				exit(1);
+			}
+			putsym($2 -> name, _TILE_);
+			symrec *aux = getsym($2 -> name);
+			aux -> value.tile = *($4);
+
+			for(int i = 0; i < 3; i++) {
+				for(int j = 0; j < 3; j++) {
+					aux -> value.tile.rule[i][j] = $5 -> value.tile.rule[i][j];
+					printf("%d ", aux -> value.tile.rule[i][j]);
+				}
+				printf("\n");
+			}
+							}
 	;
 
 section
-	: SECTION IDENTIFIER ':' ALGORITHM '{'section_declaration'}'  {printf("Seccion\n"); }
+	: SECTION IDENTIFIER ':' ALGORITHM '{'section_declaration'}'  { printf("Seccion\n"); }
 	;
 
 section_declaration
-	:  IDENTIFIER'='constant';' 		{printf("Declaracion");}
+	:  IDENTIFIER'='constant';' 		{ printf("Declaracion"); }
 	;
 
 tile_content
-	: tile_content IDENTIFIER'='CONST_STRING';'			{printf("Contenido de tile");}
-	| %empty
+	: NAME '=' CONST_STRING ';' TILESET'='CONST_STRING ';' DEFAULT'=' CONST_BOOL';' {
+			$$ = (Tile*)malloc(sizeof(Tile));
+			$$ -> name = (char*) malloc(sizeof(char)*strlen($3 -> value._string));
+			strcpy($$ -> name, $3 -> value._string);
+			$$ -> tileset = (char*) malloc(sizeof(char)*strlen($7 -> value._string));
+			strcpy($$ -> name, $7 -> value._string);
+			$$ -> flag = $11 -> value._bool;
+								}
 	;
 
 main_function
@@ -97,11 +122,35 @@ code_block
 	| error                  { yyerrok; }
 	;
 rule
-	: %empty
-	| RULE '=''{' vector','vector','vector'}'	{printf("rule\n");}
+	: %empty		{printf("xd\n");}
+	| RULE '=''{'vector','vector','vector'}'	{
+			$$ = (symrec*)malloc(sizeof(symrec));	
+			for(int i = 0; i < 3; i++)
+				$$ -> value.tile.rule[0][i]= $4 -> value._vector[i];
+			for(int i = 0; i < 3; i++)
+				$$ -> value.tile.rule[1][i]= $6 -> value._vector[i];
+			for(int i = 0; i < 3; i++)
+				$$ -> value.tile.rule[2][i]= $8 -> value._vector[i];
+			for(int i = 0; i < 3; i++) {
+				for(int j = 0; j < 3; j++) {
+					printf("%d ", $$ -> value.tile.rule[i][j]);
+				}
+				printf("\n");
+			}
+							}
 	;
 vector
-	: '{'CONST_INT','CONST_INT','CONST_INT'}' 	{printf("vector\n");}
+	: '{'expression','expression','expression'}' 	{
+			checkTypes($2 -> type, $4 -> type);
+			checkTypes($4 -> type, $6 -> type);
+			if($2 -> type != _INT_)  {
+				printf("Hoy es noche de FREE FIRE!!!\n");
+			}
+			$$ = (symrec*)malloc(sizeof(symrec));
+			$$ -> value._vector[0] = $2 -> value._int;
+			$$ -> value._vector[1] = $4 -> value._int; 
+			$$ -> value._vector[2] = $6 -> value._int;
+							}
 	;
 statement
 	: variable_declaration   { printf("variable\n"); }
@@ -111,17 +160,6 @@ statement
 	| while        { printf("while\n"); }
 	| if           { printf("if\n"); }
 	;
-/*
-function
-	: FUNCTION IDENTIFIER '(' args ')' '{' statement '}' 		{ printf("Funcion\n"); }
-	;
-args
-	: args ',' args			{ printf("Argumento\n"); }
-	| type IDENTIFIER		{ printf("Declaracion\n");}	
-	| %empty
-	;
-*/
-//int a = 10;
 variable_declaration
 	: type variable '=' expression             	{
 		if(getsym($2 -> name) != NULL) {
@@ -130,11 +168,15 @@ variable_declaration
 		}
 		checkTypes($1 -> type, $4 -> type);
 		$$ -> type = $1 -> type;
-		assignUnary($2,$4, '=');
+		assignUnary($2, $4, '=');
+		$2 -> type = $1 -> type;
 		assignUnary($$, $2, '=');
 		putsym($2 -> name, $1 -> type);
 		symrec* aux = getsym($2 -> name);
 		assignUnary(aux, $4, '=');
+		printf("%s: %d\n", $2 -> name, aux -> value._bool);
+		printf("%s: %d\n", $2 -> name, aux -> value._int);
+		printf("%s: %f\n", $2 -> name, aux -> value._double);
 							}
 	| type variable '=' variable                	{ 
 		symrec *aux;
@@ -151,6 +193,7 @@ variable_declaration
 		assignUnary($$, aux, '=');
 		$$ -> type = aux -> type;
 		putsym($2 -> name, aux -> type);
+		printf("%s: %d\n", $2 -> name, $$ -> value._int);
 		printf("tipo idenfificador = idenfificador\n"); 
 							}
 	| type variable   		                { 
@@ -162,7 +205,6 @@ variable_declaration
 		putsym($2 -> name, $1 -> type);
 		printf("tipo idenfificador\n"); 
 							}
-	| type variable '=' '{' const_list '}'    	{ printf("tipo idenfificador[entero] = {lista}\n"); }
 	;
 variable
 	: IDENTIFIER'['expression']'			{printf("Identificador[expresion]\n");}
@@ -189,90 +231,149 @@ if
 
 expression
 	: constant                       		{ 
+		$$ = (symrec*)malloc(sizeof(symrec));
 		printf("constate: "); 
-		if($$ == NULL || $1 == NULL) {
-			printf("xd\n");
-			exit(1);
-		}
 		$$ -> type = $1 -> type; 
+		assignUnary($$, $1, '=');
 			
 							}
 	| expression '+' expression      		{ 
-		checkTypes($1-> type, $3 -> type);
+		$$ = (symrec*)malloc(sizeof(symrec));
+		checkTypes($1 -> type, $3 -> type);
 		$$ -> type = $1 -> type;
 		assignValue($$, $1, $3, '+');
 		printf("expresion + expresion\n"); 
 							}
 	| expression '-' expression      		{ 
+		$$ = (symrec*)malloc(sizeof(symrec));
 		checkTypes($1-> type, $3 -> type);
 		$$ -> type = $1 -> type;
 		assignValue($$, $1, $3, '-');
           	printf("expresion - expresion\n"); 
               						}
 	| expression '*' expression      		{ 
+		$$ = (symrec*)malloc(sizeof(symrec));
 		checkTypes($1-> type, $3 -> type);
 		$$ -> type = $1 -> type;
+		printf("$1 -> value: %d\n", $1 -> value._int);
+		printf("$3 -> value: %d\n", $3 -> value._int);
+		printf("%p\n", $$);
+		printf("%p\n", $1);
+		printf("%p\n", $3);
 		assignValue($$, $1, $3, '*');
+		printf("ValMul: %d\n", $$ -> value._int);
 		printf("expression * expression\n");
+		free($1);
+		free($3);
               						}
 	| expression '/' expression      		{ 
+		$$ = (symrec*)malloc(sizeof(symrec));
 		checkTypes($1-> type, $3 -> type);
 		$$ -> type = $1 -> type;
 		assignValue($$, $1, $3, '/');
 		printf("expression / expression\n"); 
+		free($1);
+		free($3);
               						}
 	| FUNCTION  '(' expression ')'   		{ printf("funcion\n"); }
-	| '-' expression %prec NEG       		{ printf("- expression\n"); }
-	| '(' expression ')'             		{ 
+	| '-' expression %prec NEG       		{ 
+		$$ = (symrec*)malloc(sizeof(symrec));
 		$$ -> type = $2 -> type;
+		assignUnary($$, $2, '-');
+		free($2);
+							}
+	| '(' expression ')'             		{ 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> type = $2 -> type;
+		assignUnary($$, $2, '=');
+		printf("( %d )\n", $2 -> value._int);
 		printf("(expression)\n"); 
+		free($2);
               						}
 	| variable PLUSPLUS                    		{ 
-		$$ -> type = $1 -> type;
-		assignUnary($$, $1, PLUSPLUS);
+		$$ = (symrec*)malloc(sizeof(symrec));
+		symrec* aux = getsym($1 -> name);
+		if(aux == NULL) {
+			printf("Ni vas a acabar la carrera\n");
+			exit(1);
+		}
+		$$ -> type = aux -> type;
+		assignUnary(aux, aux, PLUSPLUS);
+		assignUnary($$, aux, '=');
 		printf("idenfificado++\n"); 
+		free($1);
               						}
 	| variable MINUSMINUS                    	{ 
-		$$ -> type = $1 -> type;
-		assignUnary($$, $1, MINUSMINUS);
+		$$ = (symrec*)malloc(sizeof(symrec));
+		symrec* aux = getsym($1 -> name);
+		if(aux == NULL) {
+			printf("te pido el cambio de carrera o tu lo pides?");
+			exit(1);
+		}
+		$$ -> type = aux -> type;
+		assignUnary(aux, aux, MINUSMINUS);
+		assignUnary($$, aux, '=');
 		printf("idenfificador--\n"); 
+		free($1);
               						}
-	| variable JOIN CONST_CHAR variable		{ printf("Join completo"); }
-	| variable                     			{ printf("idenfificador\n"); }
-	| condition                      		{ printf("condicion\n"); }
+	| variable                     			{ 
+		symrec* aux = getsym($1 -> name);
+		if(aux == NULL) {
+			printf("Se esta usando una variable no declarada\n");
+			exit(1);
+		}
+		$$ -> type = aux -> type;
+		assignUnary($$, aux, '=');
+		free($1);
+							}
+	| condition                      		{ 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> type = _BOOL_;
+		$$ -> value._bool = $1 -> value._bool;
+							}
 	| variable '='expression      			{ 
-		checkTypes($1 -> type, $3 -> type);
+		symrec* aux = getsym($1 -> name);
+		if(aux == NULL) {
+			printf("Neta we, ya mejor vete a dormir\n");
+			exit(1);
+		}
+		checkTypes(aux -> type, $3 -> type);
 		$$ -> type = $3 -> type;
-		assignUnary($1, $3, '=');
-		assignUnary($$, $1, '=');
+		assignUnary(aux, $3, '=');
+		assignUnary($$, aux, '=');
 		printf("idenfificador = expresion\n"); 
+		free($3);
+		free($1);
 					      		}
 	;
+//| variable JOIN CONST_CHAR variable		{ printf("Join completo"); }
 condition
 	: condition logical_operator condition  { 
+		$$ = (symrec*)malloc(sizeof(symrec));
 		checkTypes($1 -> type, $3 -> type);
 		assignValue($$, $1, $3, $2); 
 		printf("condicion op condicion\n"); 
               					}
-	| variable                             		{ 
-		if($1 -> type != _BOOL_){
-			printf("No coinciden los tipos mi tio\n");
-			exit(1);
-		}
-		$$ -> type = $1 -> type;
-		$$ -> value._bool = $1 -> value._bool;
+	| expression comparation_operator expression        { 
+		printf("xd: %d\n", $2);
+		$$ = (symrec*)malloc(sizeof(symrec));
+		checkTypes($1 -> type, $3 -> type);
+
+		$$ -> type = _BOOL_;
+		assignValue($$, $1, $3, $2);
+		free($1);
+		free($3);
 		printf("variable\n"); 
               						}
-	| constant                              { 
-		if($1 -> type != _BOOL_) {
-			printf("Solo se puede true o false padrino\n");
-			exit(1);
-		}
+	| CONST_BOOL                              	{ 
+		$$ = (symrec*)malloc(sizeof(symrec));
 		$$ -> type = _BOOL_;
 		$$ -> value._bool = $1 -> value._bool;
+		free($1);
 		printf("constante: ");
-              }
-	| '!' condition                         { 
+              						}
+	| '!' condition                        { 
+		$$ = (symrec*)malloc(sizeof(symrec));
         	if($2 -> type != _BOOL_) {
         		printf("No coinciden los tipos mi tio\n");
         		exit(1);
@@ -281,7 +382,18 @@ condition
 		assignUnary($$, $2, '!');
 		printf("no condicion\n");
               }
+	| '!' variable 				{
+		symrec *aux = getsym($2 -> name);
+		if(aux == NULL || aux -> type != _BOOL_) {
+			printf("No nos interesa tu rollo, nomas que funcione\n");
+			exit(1);
+		}
+		$$ -> value._bool = !(aux -> value._bool);
+		$$ -> type = _BOOL_;
+		free($2);
+						}
 	| '(' condition ')'                     { 
+		$$ = (symrec*)malloc(sizeof(symrec));
 		$$ -> type = $2 -> type;
 		assignUnary($$,$2,'=');
 		printf("(condicion)\n"); 
@@ -289,35 +401,88 @@ condition
 	;
 
 logical_operator
-	: LESS                    
-	| GREATER
-	| GREATER_EQ
-	| LESS_EQ
-	| AND_OP
-	| NEQ
-	| OR_OP
+	: AND_OP 				{ $$ = $1; }
+	| OR_OP					{ $$ = $1; }
 	;
-
-const_list
-	: constant ',' const_list  { printf("costante, lista\n"); }
-	| constant                 { printf("constante: "); }
+comparation_operator
+	: GREATER_EQ 				{ $$ = $1; }
+	| GREATER				{ $$ = $1; printf("Valor: %d\n", $1); }
+	| LESS_EQ				{ $$ = $1; }
+	| LESS					{ $$ = $1; }
+	| NEQ					{ $$ = $1; }
+	| EQ					{ $$ = $1; }
 	;
-
 constant
-	: CONST_INT     { $$ -> type = _INT_; printf("const_int\n"); }
-	| CONST_FLOAT   { $$ -> type = _FLOAT_; printf("const_float\n"); }
-	| CONST_DOUBLE  { $$ -> type = _DOUBLE_; printf("const_double\n"); }
-	| CONST_CHAR    { $$ -> type = _CHAR_; printf("const_char\n"); }
-	| BOOL   	{ $$ -> type = _BOOL_; printf("const_bool\n"); }
+	: CONST_INT     { 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> value._int = $1 -> value._int; 
+		$$ -> type = _INT_; 
+		printf("const_int\n"); 
+		}
+	| CONST_FLOAT   { 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> value._float = $1 -> value._float; 
+		$$ -> type = _FLOAT_; 
+		printf("const_float\n"); 
+		}
+	| CONST_DOUBLE  { 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> value._double = $1 -> value._double; 
+		$$ -> type = _DOUBLE_; 
+		printf("const_double\n"); 
+		}
+	| CONST_CHAR    { 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> value._char = $1 -> value._char; 
+		$$ -> type = _CHAR_; 
+		printf("const_char\n"); 
+		}
+	| CONST_BOOL   	{ 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> value._bool = $1 -> value._bool; 
+		$$ -> type = _BOOL_; 
+		printf("const_bool\n"); 
+		}
+	| CONST_STRING {
+		$$ = (symrec*)malloc(sizeof(symrec));	
+		int len = strlen($1 -> value._string);
+		$$ -> value._string = (char*)malloc(sizeof(char)*len);
+		strcpy($$ -> value._string, $1 -> value._string);
+		$$ -> type = _STRING_;
+		free($1);
+		}
 	;
 
 type
-	: INT      { $$ -> type = _INT_; printf("int\n"); }
-	| FLOAT    { $$ -> type = _FLOAT_; printf("float\n"); }
-	| DOUBLE   { $$ -> type = _DOUBLE_; printf("double\n"); }
-	| LONG     { $$ -> type = _LONG_; printf("long\n"); }
-	| BOOL     { $$ -> type = _BOOL_; printf("bool\n"); }
-	| CHAR     { $$ -> type = _CHAR_; printf("char\n"); }
+	: INT      { 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> type = _INT_; printf("int\n"); 
+		}
+	| FLOAT    { 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> type = _FLOAT_; printf("float\n"); 
+		}
+	| DOUBLE   { 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> type = _DOUBLE_; printf("double\n"); 
+		}
+	| LONG     { 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> type = _LONG_; printf("long\n"); 
+		}
+	| BOOL     { 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> type = _BOOL_; printf("bool\n"); 
+		}
+	| CHAR     { 
+		$$ = (symrec*)malloc(sizeof(symrec));
+		$$ -> type = _CHAR_; printf("char\n"); 
+		}
+	| STRING   {
+		$$  = (symrec*) malloc(sizeof(symrec));
+		$$ -> type = _STRING_; 
+		printf("String\n");
+		}
 	;
 
 
@@ -367,6 +532,7 @@ int main(int argc, char** argv) {
 }
 
 void assignUnary(symrec* $$, symrec* $1, int opc) {
+ 	printf("$1 -> type = %d\n", $1 -> type);
     switch($1 -> type) {
       case _INT_:
         switch(opc) {
@@ -413,25 +579,40 @@ void assignUnary(symrec* $$, symrec* $1, int opc) {
           case MINUSMINUS: $$ -> value._long = $1 -> value._long - 1; break;
         } 
         break;
+	case _STRING_:
+		if(opc == '=') {
+			int len = strlen($1 -> value._string);
+			$$ -> value._string = (char*)malloc(len*sizeof(char));
+			strcpy($$ -> value._string, $1 -> value._string);
+		}
+		else {
+			printf("Que haces, eso no se puede\n");
+		}
+	break;
       default:
+      	printf("Error unario\n");
         printf("Hay un error!\n");
         exit(1);
     }
   }
   // Para operaciones binarias
 void assignValue(symrec* a, symrec* b, symrec* c, int opc) {
+	printf("OPC: %d\n", opc);
 	switch(b -> type) {
 		case _INT_:
+			printf("B: %d\n", b -> value._int);
+			printf("C: %d\n", c -> value._int);
 			switch(opc) {
 				case '+': a -> value._int = b -> value._int + c -> value._int; break;			
 				case '-': a -> value._int = b -> value._int - c -> value._int; break;			
 				case '*': a -> value._int = b -> value._int * c -> value._int; break;			
 				case '/': a -> value._int = b -> value._int / c -> value._int; break;			
-				case '<': a -> value._bool = b -> value._int < c -> value._int; break;			
-				case '>': a -> value._bool = b -> value._int > c -> value._int; break;
+				case LESS: a -> value._bool = b -> value._int < c -> value._int; break;			
+				case GREATER: a -> value._bool = b -> value._int > c -> value._int; break;
 				case GREATER_EQ: a -> value._bool = b -> value._int >= c -> value._int; break;
 				case LESS_EQ: a -> value._bool = b -> value._int <= c -> value._int; break;
 				case NEQ: a-> value._bool = b -> value._int != c -> value._int; break;
+				case EQ: a-> value._bool = b -> value._int == c -> value._int; break;
 				default:
 					printf("Te faltan manos men\n");
 					exit(1);
@@ -443,27 +624,30 @@ void assignValue(symrec* a, symrec* b, symrec* c, int opc) {
 				case '-': a -> value._float = b -> value._float - c -> value._float; break;
 				case '*': a -> value._float = b -> value._float * c -> value._float; break;
 				case '/': a -> value._float = b -> value._float / c -> value._float; break;
-				case '<': a -> value._bool = b -> value._float < c -> value._float; break;
-				case '>': a -> value._bool = b -> value._float > c -> value._float; break;
+				case LESS: a -> value._bool = b -> value._float < c -> value._float; break;
+				case GREATER: a -> value._bool = b -> value._float > c -> value._float; break;
 				case GREATER_EQ: a -> value._bool = b -> value._float >= c -> value._float; break;
 				case LESS_EQ: a -> value._bool = b -> value._float <= c -> value._float; break;
 				case NEQ: a-> value._bool = b -> value._float != c -> value._float; break;
+				case EQ: a-> value._bool = b -> value._float == c -> value._float; break;
 				default:
 					printf("Te faltan manos men\n");
 					exit(1);
 			}
 			break;
 		case _DOUBLE_:
+			printf("%f / %f\n", b -> value._double, c -> value._double);
 			switch(opc) {
 				case '+': a -> value._double = b -> value._double + c -> value._double; break;
 				case '-': a -> value._double = b -> value._double - c -> value._double; break;
 				case '*': a -> value._double = b -> value._double * c -> value._double; break;
 				case '/': a -> value._double = b -> value._double / c -> value._double;break;
-				case '<': a-> value._bool = b -> value._double < c -> value._double;break;
-				case '>': a-> value._bool = b -> value._double > c -> value._double;break;
+				case LESS: a-> value._bool = b -> value._double < c -> value._double;break;
+				case GREATER: a-> value._bool = b -> value._double > c -> value._double;break;
 				case GREATER_EQ: a -> value._bool = b -> value._double >= c -> value._double;break;
 				case LESS_EQ: a-> value._bool = b -> value._double <= c -> value._double;break;
 				case NEQ: a-> value._bool = b -> value._double != c -> value._double; break;
+				case EQ: a-> value._bool = b -> value._double == c -> value._double; break;
 				default:
 					printf("Te faltan manos men\n");
 					exit(1);
@@ -487,6 +671,7 @@ void assignValue(symrec* a, symrec* b, symrec* c, int opc) {
 				case OR_OP: a -> value._bool = b -> value._bool | c -> value._bool; break;
 				case AND_OP: a -> value._bool = b -> value._bool & c -> value._bool; break;	
   				case NEQ: a-> value._bool = b -> value._bool != c -> value._bool; break;
+  				case EQ: a-> value._bool = b -> value._bool != c -> value._bool; break;
 				default:
 					printf("Te faltan manos men\n");
 					exit(1);
@@ -498,11 +683,12 @@ void assignValue(symrec* a, symrec* b, symrec* c, int opc) {
 				case '-': a -> value._long = b -> value._long - c -> value._long; break;	
 				case '*': a -> value._long = b -> value._long * c -> value._long; break;	
 				case '/': a -> value._long = b -> value._long / c -> value._long; break;	
-				case '<': a-> value._bool = b -> value._long < c -> value._long; break;
-				case '>': a-> value._bool = b -> value._long > c -> value._long; break;
+				case LESS: a-> value._bool = b -> value._long < c -> value._long; break;
+				case GREATER: a-> value._bool = b -> value._long > c -> value._long; break;
 				case GREATER_EQ: a -> value._bool = b -> value._long >= c -> value._long;break;
 				case LESS_EQ: a-> value._bool = b -> value._long <= c -> value._long; break;
 				case NEQ: a-> value._bool = b -> value._long != c -> value._long; break;
+				case EQ: a-> value._bool = b -> value._long == c -> value._long; break;
 				default:
 					printf("Te faltan manos men\n");
 					exit(1);
