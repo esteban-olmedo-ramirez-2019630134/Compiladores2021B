@@ -14,20 +14,20 @@ smarttile tile_montania {
 	tile pasto {
 		name = "pastito";
 		tileset = "Mountain/Tileset";
-		default = true;
+		default = false;
 		rule = {
-			{0, 1, 0},
-			{0, 0, -1},
-			{-1, 0, 0}
+			{1,1,1},
+			{0,0,0},
+			{1,1,1}
 		}
 	}
 }
 
 section montania : RandomWalk {
-	a = 0.27;
+	seed = 3.14;
+	x = 10;
 }
 
 sasageyo{
-	int c = -1;
-	int d = -1-(-1);
+	int a = 0;
 }

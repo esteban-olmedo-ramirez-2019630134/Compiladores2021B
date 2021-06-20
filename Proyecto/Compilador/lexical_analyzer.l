@@ -9,6 +9,20 @@
 	#define _DOUBLE_ 5
 	#define _CHAR_ 6
 	#define _STRING_ 7
+	#define _TILE_ 8
+	#define _SMARTTILE_ 9
+	#define _SECTION_ 10
+	#define _CONTAINER_ 11
+	#define PERLIN_NOISE 20
+	#define SMOOTHED_PERLIN_NOISE 21
+	#define RANDOM_WALK 22
+	#define SMOOTHED_RANDOM_WALK 23
+	#define PERLIN_NOISE_CAVE 24
+	#define RANDOM_WALK_CAVE 25
+	#define DIRECCIONAL_TUNNEL 26
+	#define CELLULAR_AUTOMATA 27 
+	#define MOORE_CELLULAR_AUTOMATA 28
+	#define VON_NEUMANN_CELLULAR_AUTOMATA 29
 %}
 
 DIGIT [0-9]
@@ -19,7 +33,10 @@ SUFFIX (u|U|L|l)*
 
  /* reserved words */
 "set size"        { return SET; }
-"smarttile"  { return SMARTTILE; }
+"smarttile"  { 
+	yylval.SMARTTILE = SMARTTILE;
+	return SMARTTILE; 
+	}
 "tileset"    { return TILESET; }
 "tile"       { return TILE; }
 "section"    { return SECTION; }
@@ -68,9 +85,59 @@ SUFFIX (u|U|L|l)*
 	yylval.LONG -> type = _LONG_; 
 	return LONG; 
 	}
-"else"	     { return ELSE;}
-"RandomWalk" { return ALGORITHM; }
-"DirectionalTunnel" { return ALGORITHM; }
+"else"	     			{ 
+					return ELSE;
+				}
+"PerlinNoise" 			{
+					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("PerlinNoise"));
+					strcpy(yylval.ALGORITHM, "PerlinNoise");
+					return ALGORITHM;
+				}
+"SmoothedPerlinNoise"		{
+					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("SmoothedPerlinNoise"));
+					strcpy(yylval.ALGORITHM, "SmoothedPerlinNoise");
+					return ALGORITHM;
+				}
+"SmoothedRandomWalk"		{
+					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("SmoothedRandomWalk"));
+					strcpy(yylval.ALGORITHM, "SmoothedRandomWalk");
+					return ALGORITHM;
+				}
+"PerlinNoiseCave"		{
+					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("PerlinNoiseCave"));
+					strcpy(yylval.ALGORITHM, "PerlinNoiseCave");
+					return ALGORITHM;
+				}
+"RandomWalkCave"		{
+					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("RandomWalkCave"));
+					strcpy(yylval.ALGORITHM, "RandomWalkCave");
+					return ALGORITHM;
+				}
+"CellularAutomata"		{
+					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("CellularAutomata"));
+					strcpy(yylval.ALGORITHM, "CellularAutomata");
+					return ALGORITHM;
+				}
+"MooreCellularAutomata"		{
+					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("MooreCellularAutomata"));
+					strcpy(yylval.ALGORITHM, "MooreCellularAutomata");
+					return ALGORITHM;
+				}
+"VonNeumannCellularAutomata" 	{
+					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("VonNeumannCellularAutomata"));
+					strcpy(yylval.ALGORITHM, "VonNeumannCellularAutomata");
+					return ALGORITHM;
+				}
+"RandomWalk" 			{ 
+					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("RandomWalk"));
+					strcpy(yylval.ALGORITHM, "RandomWalk");
+					return ALGORITHM; 
+				}
+"DirectionalTunnel" 		{ 
+					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("DirectionalTunnel"));
+					strcpy(yylval.ALGORITHM, "DirectionalTunnel");
+					return ALGORITHM; 
+				}
 "rule"	     { return RULE; }
 "--"  { return MINUSMINUS; }
 "++"  { return PLUSPLUS; }
@@ -153,7 +220,7 @@ SUFFIX (u|U|L|l)*
 "]"  { return ']'; }
 ":"  { return ':'; }
 
-.
 "//"*
+.
 %%
 

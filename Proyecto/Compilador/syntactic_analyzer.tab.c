@@ -79,6 +79,20 @@
 	#define _CHAR_ 6
 	#define _STRING_ 7
 	#define _TILE_ 8
+	#define _SMARTTILE_ 9
+	#define _SECTION_ 10
+	#define _CONTAINER_ 11
+	#define PERLIN_NOISE 20
+	#define SMOOTHED_PERLIN_NOISE 21
+	#define RANDOM_WALK 22
+	#define SMOOTHED_RANDOM_WALK 23
+	#define PERLIN_NOISE_CAVE 24
+	#define RANDOM_WALK_CAVE 25
+	#define DIRECCIONAL_TUNNEL 26
+	#define CELLULAR_AUTOMATA 27 
+	#define MOORE_CELLULAR_AUTOMATA 28
+	#define VON_NEUMANN_CELLULAR_AUTOMATA 29
+
 	void yyerror(const char* message){
 		printf("%s\n", message);
 		exit(1);
@@ -91,9 +105,11 @@
 	}
 	void assignUnary(symrec* $$, symrec* $1, int opc);
   	void assignValue(symrec* a, symrec* b, symrec* c, int opc);
+	void put_attribute(Section* a, symrec* attribute, symrec* constant);
+	char* resize_string(char *code, int *new_len, int req_len);
   
 
-#line 97 "syntactic_analyzer.tab.c"
+#line 113 "syntactic_analyzer.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -166,8 +182,8 @@ extern int yydebug;
     IF = 280,
     ELSE = 281,
     RULE = 282,
-    SET = 283,
-    SMARTTILE = 284,
+    SMARTTILE = 283,
+    SET = 284,
     TILE = 285,
     SECTION = 286,
     _BEGIN = 287,
@@ -195,8 +211,16 @@ extern int yydebug;
 union YYSTYPE
 {
 
+  /* section_declaration  */
+  Section* section_declaration;
   /* tile_content  */
   Tile* tile_content;
+  /* tiles_list  */
+  TileList* tiles_list;
+  /* ALGORITHM  */
+  char* ALGORITHM;
+  /* SMARTTILE  */
+  int SMARTTILE;
   /* GREATER_EQ  */
   int GREATER_EQ;
   /* LESS_EQ  */
@@ -265,7 +289,11 @@ union YYSTYPE
   symrec* vector;
   /* rule  */
   symrec* rule;
-#line 269 "syntactic_analyzer.tab.c"
+  /* tile  */
+  symrec* tile;
+  /* smarttile  */
+  symrec* smarttile;
+#line 297 "syntactic_analyzer.tab.c"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -584,16 +612,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  5
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   343
+#define YYLAST   318
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  64
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  26
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  78
+#define YYNRULES  77
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  179
+#define YYNSTATES  182
 
 #define YYUNDEFTOK  2
 #define YYMAXUTOK   303
@@ -645,14 +673,14 @@ static const yytype_int8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    55,    55,    56,    59,    63,    64,    65,    68,    72,
-      73,    77,    97,   101,   105,   116,   120,   121,   122,   125,
-     126,   143,   156,   157,   158,   159,   160,   161,   164,   181,
-     199,   210,   211,   212,   213,   220,   224,   228,   229,   233,
-     240,   247,   254,   269,   278,   279,   285,   293,   306,   319,
-     329,   334,   351,   357,   368,   375,   385,   395,   404,   405,
-     408,   409,   410,   411,   412,   413,   416,   422,   428,   434,
-     440,   446,   457,   461,   465,   469,   473,   477,   481
+       0,    75,    75,    76,    80,    85,    87,    89,    91,    95,
+     121,   131,   143,   186,   206,   216,   225,   247,   251,   252,
+     253,   256,   257,   276,   295,   296,   297,   298,   299,   302,
+     316,   332,   341,   355,   374,   382,   386,   390,   391,   395,
+     400,   416,   432,   449,   466,   478,   492,   511,   530,   540,
+     547,   573,   587,   603,   617,   633,   648,   661,   666,   673,
+     678,   683,   688,   693,   698,   705,   713,   721,   730,   739,
+     748,   766,   773,   780,   787,   795,   803,   811
 };
 #endif
 
@@ -665,16 +693,17 @@ static const char *const yytname[] =
   "LONG", "BOOL", "CHAR", "STRING", "CONST_CHAR", "CONST_BOOL",
   "CONST_LONG", "CONST_INT", "CONST_FLOAT", "CONST_DOUBLE", "CONST_STRING",
   "FUNCTION", "MAIN", "ALGORITHM", "PLUSPLUS", "MINUSMINUS", "FOR",
-  "WHILE", "IF", "ELSE", "RULE", "SET", "SMARTTILE", "TILE", "SECTION",
+  "WHILE", "IF", "ELSE", "RULE", "SMARTTILE", "SET", "TILE", "SECTION",
   "_BEGIN", "END", "NEW", "JOIN", "CONTAINER", "NAME", "TILESET",
   "DEFAULT", "GREATER_EQ", "LESS_EQ", "AND_OP", "OR_OP", "NEQ", "GREATER",
   "LESS", "EQ", "'='", "'-'", "'+'", "'*'", "'/'", "NEG", "'{'", "','",
   "'}'", "';'", "':'", "'['", "']'", "'('", "')'", "'!'", "$accept",
   "variable_declaration", "variable", "type", "expression", "condition",
-  "constant", "vector", "rule", "logical_operator", "comparation_operator",
-  "tile_content", "input", "set_size", "initial_declaration", "smarttile",
-  "tiles_list", "tile", "section", "section_declaration", "main_function",
-  "code_block", "statement", "while", "for", "if", YY_NULLPTR
+  "constant", "vector", "rule", "tile", "logical_operator",
+  "comparation_operator", "tiles_list", "tile_content", "smarttile",
+  "section_declaration", "input", "set_size", "initial_declaration",
+  "section", "main_function", "code_block", "statement", "while", "for",
+  "if", YY_NULLPTR
 };
 #endif
 
@@ -693,12 +722,12 @@ static const yytype_int16 yytoknum[] =
 };
 # endif
 
-#define YYPACT_NINF (-154)
+#define YYPACT_NINF (-87)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
 
-#define YYTABLE_NINF (-57)
+#define YYTABLE_NINF (-56)
 
 #define yytable_value_is_error(Yyn) \
   0
@@ -707,24 +736,25 @@ static const yytype_int16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int16 yypact[] =
 {
-      -2,   -13,    13,  -154,   -24,  -154,   171,    45,    10,    66,
-      75,  -154,  -154,  -154,    27,   152,    29,    46,    98,  -154,
-      54,  -154,  -154,  -154,  -154,  -154,  -154,  -154,  -154,  -154,
-    -154,  -154,  -154,  -154,    56,    57,    59,    60,    73,    73,
-      73,  -154,   -15,   123,   276,     9,  -154,    76,    72,  -154,
-    -154,  -154,  -154,   111,    79,   168,    73,   325,    73,    73,
-      56,   178,   147,   -18,    15,   276,   -28,  -154,  -154,    73,
-     102,  -154,  -154,  -154,  -154,  -154,  -154,    73,    73,    73,
-      73,    73,  -154,  -154,    73,  -154,    91,   -11,    85,    88,
-      -4,    86,   220,   192,    94,    18,    24,  -154,  -154,   276,
-      73,    97,    97,   178,   178,   276,    68,  -154,   162,  -154,
-    -154,   169,  -154,  -154,  -154,  -154,  -154,    73,   119,   120,
-     -10,   276,   124,   133,   139,    11,   152,   152,   166,   326,
-    -154,    73,   148,   149,   141,   179,  -154,   150,   206,  -154,
-     182,   193,   163,   156,  -154,   160,   167,   159,   172,  -154,
-     152,   152,   189,   174,   164,   184,   186,    73,   175,  -154,
-    -154,   218,   250,   174,   188,    73,   194,   209,   263,   174,
-     211,    73,   207,   261,   237,  -154,   205,  -154,  -154
+     -23,   -34,    20,   -20,   -18,   -87,    24,    28,   -87,    76,
+     -87,    47,   -16,   -24,     9,   -87,   -87,   -87,    17,    34,
+      70,   138,    83,    96,    34,    49,    57,   -87,    53,   -87,
+     -87,   -87,   -87,   -87,   -87,   -87,   -87,   -87,   -87,   -87,
+     -87,   -87,    55,    66,    71,   111,    54,    54,    54,   -87,
+       4,   155,   246,    13,   -87,   103,   107,   -87,   -87,   -87,
+     104,   114,   -87,   -87,   166,    54,   115,    54,    54,   106,
+      90,   162,   -25,   135,   246,   -27,   -87,   -87,    54,   122,
+     -87,   -87,   -87,   -87,   -87,   -87,    54,    54,    54,    54,
+      54,   -87,   -87,    54,   -87,    77,   116,   134,   127,     2,
+     190,   119,    11,    67,   158,   -87,   -87,   246,    54,   259,
+     259,    90,    90,   246,   124,   -87,   -87,   137,   161,   301,
+     141,   -87,   -87,    54,   128,   139,   136,    -9,   246,   177,
+     150,   144,   -87,   147,   301,     3,   138,   138,   -87,   148,
+     156,   -87,   -87,   172,    54,   159,   163,   180,   178,   -87,
+     176,   -87,   217,   185,    54,   189,   191,   192,   232,   220,
+     178,   138,   138,   198,    54,   213,   206,   225,   237,   233,
+     178,   -87,   -87,   241,    54,   238,   289,   207,   -87,   245,
+     -87,   -87
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -732,40 +762,41 @@ static const yytype_int16 yypact[] =
      means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       2,     0,     0,     7,     0,     1,     0,     0,     0,     0,
-       0,     6,     5,     3,     0,     0,     0,     0,     0,    18,
-      34,    72,    73,    74,    75,    76,    77,    78,    69,    54,
-      66,    67,    68,    71,    24,     0,     0,     0,     0,     0,
-       0,    22,    49,     0,    23,    50,    39,     0,     0,    26,
-      25,    27,    10,     0,     0,     0,     0,     0,     0,     0,
-       0,    45,     0,    50,    49,     0,    50,    47,    48,     0,
-      30,    60,    62,    64,    61,    63,    65,     0,     0,     0,
-       0,     0,    58,    59,     0,    15,     0,     0,     0,     0,
-      34,    66,     0,     0,     0,    50,    50,    46,    57,    51,
-       0,    41,    40,    42,    43,    53,    50,    17,     0,     8,
-       9,     0,     4,    33,    32,    31,    44,     0,     0,     0,
-      49,    28,     0,     0,     0,    50,     0,     0,     0,     0,
-      12,     0,     0,     0,     0,    19,    70,     0,     0,    35,
-      37,     0,     0,     0,    13,     0,     0,     0,     0,    11,
-       0,     0,     0,     0,     0,     0,     0,     0,     0,    36,
-      38,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,    20,     0,    21,    14
+       2,     0,     0,     0,     0,     1,     0,     0,     7,     0,
+       8,     0,     0,     0,     0,     6,     5,     3,     0,     0,
+       0,     0,     0,     0,    11,     0,     0,    20,    34,    71,
+      72,    73,    74,    75,    76,    77,    68,    53,    65,    66,
+      67,    70,     0,     0,     0,     0,     0,     0,     0,    24,
+      48,     0,    25,    49,    39,     0,     0,    27,    26,    28,
+       0,     0,    10,     9,     0,     0,     0,     0,     0,     0,
+      44,     0,    49,    48,     0,    49,    46,    47,     0,    31,
+      59,    61,    63,    60,    62,    64,     0,     0,     0,     0,
+       0,    57,    58,     0,    17,     0,     0,     0,     0,     0,
+       0,     0,    49,    49,     0,    45,    56,    50,     0,    41,
+      40,    42,    43,    52,    49,    19,     4,     0,    21,     0,
+       0,    13,    33,     0,     0,     0,     0,    48,    29,     0,
+       0,     0,    69,     0,     0,    49,     0,     0,    32,     0,
+       0,    12,    15,     0,     0,     0,     0,     0,     0,    14,
+       0,    35,    37,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,    36,    38,     0,     0,     0,     0,     0,    22,     0,
+      23,    16
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int16 yypgoto[] =
 {
-    -154,   217,   -35,  -154,   -38,   -36,   146,  -153,  -154,  -154,
-    -154,  -154,  -154,  -154,  -154,  -154,  -154,  -154,  -154,  -154,
-    -154,   -77,  -154,  -154,  -154,  -154
+     -87,   242,   -41,   -87,   -46,   -44,   -60,   -64,   -87,   -87,
+     -87,   -87,   283,   -87,   300,   -87,   -87,   -87,   -87,   305,
+     -87,   -86,   -87,   -87,   -87,   -87
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int16 yydefgoto[] =
 {
-      -1,    41,    42,    43,    44,    45,    46,   158,   143,    84,
-      81,   135,     2,     3,     6,    11,    87,   110,    12,   124,
-      13,    47,    48,    49,    50,    51
+      -1,    49,    50,    51,    52,    53,    54,   155,   131,    24,
+      93,    90,    25,   118,     8,    99,     2,     3,     9,    10,
+      17,    55,    56,    57,    58,    59
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -773,130 +804,125 @@ static const yytype_int16 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int16 yytable[] =
 {
-      61,    62,    65,    63,    66,    64,    67,    68,    70,   107,
-     166,    67,    68,     5,    82,    83,   172,    92,    93,   108,
-      65,    65,    95,    96,    82,    83,     1,   -55,   -55,   -55,
-       7,    99,   -55,    69,   -55,     4,    67,    68,    69,   101,
-     102,   103,   104,   105,    98,   109,    65,   -29,   106,   132,
-     133,    82,    83,    82,    83,    55,   113,   -56,   -56,    14,
-      82,    83,   121,    69,    15,   120,    82,    83,   131,    16,
-     -56,   -56,   -56,   154,   155,   -56,    20,   -56,    17,    65,
-     118,   125,    18,    52,    28,    29,   119,    30,    31,    32,
-      33,    60,    19,   138,    20,    21,    22,    23,    24,    25,
-      26,    27,    28,    29,    53,    30,    31,    32,    33,    34,
-      82,    83,    54,    55,    35,    36,    37,    56,    57,   162,
-      58,    59,    38,   -52,   -52,   -52,    20,   168,   -52,    86,
-     -52,    88,    85,   174,    39,    89,    40,    71,    72,   111,
-      38,    73,    74,    75,    76,   112,   114,   -16,    79,    80,
-     100,   117,    39,    19,    40,    20,    21,    22,    23,    24,
-      25,    26,    27,    28,    29,   122,    30,    31,    32,    33,
-      34,    90,   123,   126,   127,    35,    36,    37,   128,    28,
-      29,   129,    91,    31,    32,    33,    60,    71,    72,   141,
-       8,    73,    74,    75,    76,   130,    77,    78,    79,    80,
-       9,    38,    10,   134,   139,   140,   142,   144,   146,    97,
-     147,   148,   149,    39,   150,    40,   152,    38,    71,    72,
-     159,   151,    73,    74,    75,    76,   153,   156,   157,    39,
-     163,    40,    71,    72,   161,   164,    73,    74,    75,    76,
-     160,    77,    78,    79,    80,   167,    71,    72,   170,   169,
-      73,    74,    75,    76,   116,    77,    78,    79,    80,   173,
-      71,    72,   178,   175,    73,    74,    75,    76,   145,    77,
-      78,    79,    80,   176,    94,   137,     0,    71,    72,     0,
-     115,    73,    74,    75,    76,     0,    77,    78,    79,    80,
-      71,    72,     0,   177,    73,    74,    75,    76,     0,    77,
-      78,    79,    80,    71,    72,   165,     0,    73,    74,    75,
-      76,     0,    77,    78,    79,    80,    71,    72,   171,     0,
-      73,    74,    75,    76,     0,    77,    78,    79,    80,    21,
-      22,    23,    24,    25,    26,    27,     0,    28,   136,     0,
-      30,    31,    32,    33
+      70,    71,    74,    72,    75,   120,     1,    73,     6,   115,
+      79,     7,    76,    77,     4,    91,    92,    91,    92,   100,
+       5,    74,    74,   102,   103,    76,    77,    12,   -54,   -54,
+     -54,    13,   107,   -54,    20,   -54,    11,   106,    19,    78,
+     109,   110,   111,   112,   113,    91,    92,    74,   -30,   114,
+     145,   146,    78,    91,    92,    91,    92,    28,   121,   133,
+     144,    18,   128,    21,    23,    36,    37,   127,    38,    39,
+      40,    41,    22,   124,   143,   166,   167,    74,    27,   135,
+      28,    29,    30,    31,    32,    33,    34,    35,    36,    37,
+      26,    38,    39,    40,    41,    14,   165,    60,   150,    61,
+      42,    43,    44,    46,     6,    63,   175,     7,   159,    91,
+      92,    64,    65,    45,    69,    47,    66,    48,   169,    29,
+      30,    31,    32,    33,    34,    35,    46,    67,   177,   125,
+      80,    81,    68,   -18,    82,    83,    84,    85,    47,    27,
+      48,    28,    29,    30,    31,    32,    33,    34,    35,    36,
+      37,    45,    38,    39,    40,    41,    76,    77,    28,    94,
+      96,    42,    43,    44,    95,   104,    91,    92,    97,    98,
+     108,   117,   126,   116,    45,   119,   123,   -55,   -55,   -51,
+     -51,   -51,   136,    78,   -51,   129,   -51,    46,   130,   134,
+     -55,   -55,   -55,   137,   139,   -55,   138,   -55,   140,    47,
+     141,    48,    80,    81,   142,   147,    82,    83,    84,    85,
+     148,    86,    87,    88,    89,   151,    80,    81,   153,   152,
+      82,    83,    84,    85,   105,    86,    87,    88,    89,   149,
+      80,    81,   154,   158,    82,    83,    84,    85,   156,    86,
+      87,    88,    89,   157,   160,   161,   162,    80,    81,   163,
+     122,    82,    83,    84,    85,   168,    86,    87,    88,    89,
+      80,    81,   171,   180,    82,    83,    84,    85,   170,    86,
+      87,    88,    89,    80,    81,   164,   173,    82,    83,    84,
+      85,   172,    86,    87,    88,    89,    80,    81,   174,   176,
+      82,    83,    84,    85,   178,    86,    87,    88,    89,    80,
+      81,   179,   181,    82,    83,    84,    85,    62,   101,    15,
+      88,    89,    36,   132,    16,    38,    39,    40,    41
 };
 
-static const yytype_int16 yycheck[] =
+static const yytype_uint8 yycheck[] =
 {
-      38,    39,    40,    39,    40,    40,    21,    22,    43,    86,
-     163,    21,    22,     0,    42,    43,   169,    55,    56,    30,
-      58,    59,    58,    59,    42,    43,    28,    55,    56,    57,
-      54,    69,    60,    48,    62,    48,    21,    22,    48,    77,
-      78,    79,    80,    81,    62,    56,    84,    57,    84,   126,
-     127,    42,    43,    42,    43,    59,    60,    42,    43,    14,
-      42,    43,   100,    48,    54,   100,    42,    43,    57,     3,
-      55,    56,    57,   150,   151,    60,     3,    62,     3,   117,
-      62,   117,    55,    54,    11,    12,    62,    14,    15,    16,
-      17,    18,     1,   131,     3,     4,     5,     6,     7,     8,
-       9,    10,    11,    12,    58,    14,    15,    16,    17,    18,
-      42,    43,    14,    59,    23,    24,    25,    61,    61,   157,
-      61,    61,    49,    55,    56,    57,     3,   165,    60,    57,
-      62,    20,    56,   171,    61,    56,    63,    40,    41,    54,
-      49,    44,    45,    46,    47,    57,    60,    56,    51,    52,
-      48,    57,    61,     1,    63,     3,     4,     5,     6,     7,
-       8,     9,    10,    11,    12,     3,    14,    15,    16,    17,
-      18,     3,     3,    54,    54,    23,    24,    25,    54,    11,
-      12,    48,    14,    15,    16,    17,    18,    40,    41,    48,
-      19,    44,    45,    46,    47,    56,    49,    50,    51,    52,
-      29,    49,    31,    37,    56,    56,    27,    57,    26,    62,
-      17,    48,    56,    61,    54,    63,    57,    49,    40,    41,
-      56,    54,    44,    45,    46,    47,    54,    38,    54,    61,
-      55,    63,    40,    41,    48,    17,    44,    45,    46,    47,
-      56,    49,    50,    51,    52,    57,    40,    41,    39,    55,
-      44,    45,    46,    47,    62,    49,    50,    51,    52,    48,
-      40,    41,    57,    56,    44,    45,    46,    47,    62,    49,
-      50,    51,    52,    12,    57,   129,    -1,    40,    41,    -1,
-      60,    44,    45,    46,    47,    -1,    49,    50,    51,    52,
-      40,    41,    -1,    56,    44,    45,    46,    47,    -1,    49,
-      50,    51,    52,    40,    41,    55,    -1,    44,    45,    46,
-      47,    -1,    49,    50,    51,    52,    40,    41,    55,    -1,
-      44,    45,    46,    47,    -1,    49,    50,    51,    52,     4,
-       5,     6,     7,     8,     9,    10,    -1,    11,    12,    -1,
-      14,    15,    16,    17
+      46,    47,    48,    47,    48,     3,    29,    48,    28,    95,
+      51,    31,    21,    22,    48,    42,    43,    42,    43,    65,
+       0,    67,    68,    67,    68,    21,    22,     3,    55,    56,
+      57,     3,    78,    60,    58,    62,    54,    62,    54,    48,
+      86,    87,    88,    89,    90,    42,    43,    93,    57,    93,
+     136,   137,    48,    42,    43,    42,    43,     3,    56,   119,
+      57,    14,   108,    54,    30,    11,    12,   108,    14,    15,
+      16,    17,    55,    62,   134,   161,   162,   123,     1,   123,
+       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
+      20,    14,    15,    16,    17,    19,   160,    14,   144,     3,
+      23,    24,    25,    49,    28,    56,   170,    31,   154,    42,
+      43,    54,    59,    36,     3,    61,    61,    63,   164,     4,
+       5,     6,     7,     8,     9,    10,    49,    61,   174,    62,
+      40,    41,    61,    56,    44,    45,    46,    47,    61,     1,
+      63,     3,     4,     5,     6,     7,     8,     9,    10,    11,
+      12,    36,    14,    15,    16,    17,    21,    22,     3,    56,
+      56,    23,    24,    25,    57,    59,    42,    43,    54,     3,
+      48,    37,    14,    57,    36,    48,    57,    42,    43,    55,
+      56,    57,    54,    48,    60,    48,    62,    49,    27,    48,
+      55,    56,    57,    54,    17,    60,    60,    62,    48,    61,
+      56,    63,    40,    41,    57,    57,    44,    45,    46,    47,
+      54,    49,    50,    51,    52,    56,    40,    41,    38,    56,
+      44,    45,    46,    47,    62,    49,    50,    51,    52,    57,
+      40,    41,    54,    48,    44,    45,    46,    47,    62,    49,
+      50,    51,    52,    26,    55,    54,    54,    40,    41,    17,
+      60,    44,    45,    46,    47,    57,    49,    50,    51,    52,
+      40,    41,    56,    56,    44,    45,    46,    47,    55,    49,
+      50,    51,    52,    40,    41,    55,    39,    44,    45,    46,
+      47,    56,    49,    50,    51,    52,    40,    41,    55,    48,
+      44,    45,    46,    47,    56,    49,    50,    51,    52,    40,
+      41,    12,    57,    44,    45,    46,    47,    24,    66,     9,
+      51,    52,    11,    12,     9,    14,    15,    16,    17
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,    28,    76,    77,    48,     0,    78,    54,    19,    29,
-      31,    79,    82,    84,    14,    54,     3,     3,    55,     1,
-       3,     4,     5,     6,     7,     8,     9,    10,    11,    12,
-      14,    15,    16,    17,    18,    23,    24,    25,    49,    61,
-      63,    65,    66,    67,    68,    69,    70,    85,    86,    87,
-      88,    89,    54,    58,    14,    59,    61,    61,    61,    61,
-      18,    68,    68,    69,    66,    68,    69,    21,    22,    48,
-      66,    40,    41,    44,    45,    46,    47,    49,    50,    51,
-      52,    74,    42,    43,    73,    56,    57,    80,    20,    56,
-       3,    14,    68,    68,    65,    69,    69,    62,    62,    68,
-      48,    68,    68,    68,    68,    68,    69,    85,    30,    56,
-      81,    54,    57,    60,    60,    60,    62,    57,    62,    62,
-      66,    68,     3,     3,    83,    69,    54,    54,    54,    48,
-      56,    57,    85,    85,    37,    75,    12,    70,    68,    56,
-      56,    48,    27,    72,    57,    62,    26,    17,    48,    56,
-      54,    54,    57,    54,    85,    85,    38,    54,    71,    56,
-      56,    48,    68,    55,    17,    55,    71,    57,    68,    55,
-      39,    55,    71,    48,    68,    56,    12,    56,    57
+       0,    29,    80,    81,    48,     0,    28,    31,    78,    82,
+      83,    54,     3,     3,    19,    78,    83,    84,    14,    54,
+      58,    54,    55,    30,    73,    76,    20,     1,     3,     4,
+       5,     6,     7,     8,     9,    10,    11,    12,    14,    15,
+      16,    17,    23,    24,    25,    36,    49,    61,    63,    65,
+      66,    67,    68,    69,    70,    85,    86,    87,    88,    89,
+      14,     3,    76,    56,    54,    59,    61,    61,    61,     3,
+      68,    68,    69,    66,    68,    69,    21,    22,    48,    66,
+      40,    41,    44,    45,    46,    47,    49,    50,    51,    52,
+      75,    42,    43,    74,    56,    57,    56,    54,     3,    79,
+      68,    65,    69,    69,    59,    62,    62,    68,    48,    68,
+      68,    68,    68,    68,    69,    85,    57,    37,    77,    48,
+       3,    56,    60,    57,    62,    62,    14,    66,    68,    48,
+      27,    72,    12,    70,    48,    69,    54,    54,    60,    17,
+      48,    56,    57,    70,    57,    85,    85,    57,    54,    57,
+      68,    56,    56,    38,    54,    71,    62,    26,    48,    68,
+      55,    54,    54,    17,    55,    71,    85,    85,    57,    68,
+      55,    56,    56,    39,    55,    71,    48,    68,    56,    12,
+      56,    57
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    64,    76,    76,    77,    78,    78,    78,    79,    80,
-      80,    81,    82,    83,    75,    84,    85,    85,    85,    72,
-      72,    71,    86,    86,    86,    86,    86,    86,    65,    65,
-      65,    66,    66,    66,    66,    87,    88,    89,    89,    68,
+       0,    64,    80,    80,    81,    82,    82,    82,    82,    78,
+      76,    76,    73,    83,    79,    79,    77,    84,    85,    85,
+      85,    72,    72,    71,    86,    86,    86,    86,    86,    65,
+      65,    65,    65,    66,    66,    87,    88,    89,    89,    68,
       68,    68,    68,    68,    68,    68,    68,    68,    68,    68,
-      68,    68,    69,    69,    69,    69,    69,    69,    73,    73,
-      74,    74,    74,    74,    74,    74,    70,    70,    70,    70,
-      70,    70,    67,    67,    67,    67,    67,    67,    67
+      68,    69,    69,    69,    69,    69,    69,    74,    74,    75,
+      75,    75,    75,    75,    75,    70,    70,    70,    70,    70,
+      70,    67,    67,    67,    67,    67,    67,    67
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     0,     3,     8,     2,     2,     0,     5,     2,
-       0,     6,     7,     4,    12,     4,     2,     3,     1,     0,
-       9,     7,     1,     1,     1,     1,     1,     1,     4,     4,
-       2,     4,     4,     4,     1,     7,    11,     7,    11,     1,
-       3,     3,     3,     3,     4,     2,     3,     2,     2,     1,
-       1,     3,     3,     3,     1,     2,     2,     3,     1,     1,
+       0,     2,     0,     3,     8,     2,     2,     1,     1,     5,
+       2,     1,     6,     7,     5,     4,    12,     4,     2,     3,
+       1,     0,     9,     7,     1,     1,     1,     1,     1,     4,
+       4,     2,     5,     4,     1,     7,    11,     7,    11,     1,
+       3,     3,     3,     3,     2,     3,     2,     2,     1,     1,
+       3,     3,     3,     1,     2,     2,     3,     1,     1,     1,
        1,     1,     1,     1,     1,     1,     1,     1,     1,     1,
-       1,     1,     1,     1,     1,     1,     1,     1,     1
+       1,     1,     1,     1,     1,     1,     1,     1
 };
 
 
@@ -1592,140 +1618,277 @@ yyreduce:
   switch (yyn)
     {
   case 3:
-#line 56 "syntactic_analyzer.y"
-                                                                {printf("SIUUUUUUUU!!!!!!\n");}
-#line 1598 "syntactic_analyzer.tab.c"
+#line 76 "syntactic_analyzer.y"
+                                                                {
+								}
+#line 1625 "syntactic_analyzer.tab.c"
     break;
 
   case 4:
-#line 59 "syntactic_analyzer.y"
-                                                                {printf("Declaracion de tamanio\n");}
-#line 1604 "syntactic_analyzer.tab.c"
+#line 80 "syntactic_analyzer.y"
+                                                                {
+								}
+#line 1632 "syntactic_analyzer.tab.c"
     break;
 
   case 5:
-#line 63 "syntactic_analyzer.y"
-                                                        {}
-#line 1610 "syntactic_analyzer.tab.c"
+#line 85 "syntactic_analyzer.y"
+                                                        {
+							}
+#line 1639 "syntactic_analyzer.tab.c"
     break;
 
   case 6:
-#line 64 "syntactic_analyzer.y"
-                                                        {}
-#line 1616 "syntactic_analyzer.tab.c"
+#line 87 "syntactic_analyzer.y"
+                                                        {
+							}
+#line 1646 "syntactic_analyzer.tab.c"
+    break;
+
+  case 7:
+#line 89 "syntactic_analyzer.y"
+                                                        {
+							}
+#line 1653 "syntactic_analyzer.tab.c"
     break;
 
   case 8:
-#line 68 "syntactic_analyzer.y"
-                                                        {printf("smarttile");}
-#line 1622 "syntactic_analyzer.tab.c"
+#line 91 "syntactic_analyzer.y"
+                                                        {
+							}
+#line 1660 "syntactic_analyzer.tab.c"
     break;
 
   case 9:
-#line 72 "syntactic_analyzer.y"
-                                                        {printf("tile_list");}
-#line 1628 "syntactic_analyzer.tab.c"
+#line 95 "syntactic_analyzer.y"
+                                                        {
+			symrec* aux = getsym((yyvsp[-3].IDENTIFIER)->name);
+			if(aux != NULL) {
+				printf("No te chifles, mae. La ingenieria no es para los chiflados\n");
+				exit(1);
+			}
+			(yyval.smarttile) = (symrec*)malloc(sizeof(symrec)); 
+			putsym((yyvsp[-3].IDENTIFIER) -> name, (yyvsp[-4].SMARTTILE));
+			(yyval.smarttile) = getsym((yyvsp[-3].IDENTIFIER) -> name);
+			(yyval.smarttile) -> type = SMARTTILE;
+			(yyval.smarttile) -> value.smart_tile = (Smarttile*)malloc(sizeof(Smarttile));
+			(yyval.smarttile) -> value.smart_tile -> tiles = (yyvsp[-1].tiles_list);
+			char *code1 = pop(&pila_codigo);
+			char *code = (char*)malloc(sizeof(char)*(strlen(code1) + 100 + 3*strlen((yyvsp[-3].IDENTIFIER) -> name)));
+			sprintf(
+				code, 
+				"List<Rule> %s = new List<Rule>(){%s};\nCreateRuleTile(\"%s\",%s);", 
+				(yyvsp[-3].IDENTIFIER) -> name, 
+				code1, 
+				(yyvsp[-3].IDENTIFIER) -> name,
+				(yyvsp[-3].IDENTIFIER) -> name
+			);
+			push(&pila_codigo, code);
+							}
+#line 1689 "syntactic_analyzer.tab.c"
+    break;
+
+  case 10:
+#line 121 "syntactic_analyzer.y"
+                                                        {
+			(yyval.tiles_list) = (TileList*) malloc(sizeof(TileList));
+			(yyval.tiles_list) -> data = (yyvsp[-1].tile) -> value.tile;
+			(yyval.tiles_list) -> next = (yyvsp[0].tiles_list);
+			char *code2 = pop(&pila_codigo);
+			char *code1 = pop(&pila_codigo);
+			char* code = (char*)malloc(sizeof(char)*(strlen(code1)+strlen(code2)+20));
+			sprintf(code,"%s, %s", code1, code2);
+			push(&pila_codigo, code);
+							}
+#line 1704 "syntactic_analyzer.tab.c"
     break;
 
   case 11:
-#line 77 "syntactic_analyzer.y"
+#line 131 "syntactic_analyzer.y"
+                                                        { 
+			(yyval.tiles_list) = (TileList*) malloc(sizeof(TileList));
+			(yyval.tiles_list) -> data = (yyvsp[0].tile) -> value.tile;
+			(yyval.tiles_list) -> next = NULL;
+			char* code1 = pop(&pila_codigo);
+			char* code = (char*)malloc(sizeof(char)*(strlen(code1)+20));
+			sprintf(code, "%s", code1);
+			push(&pila_codigo, code);
+							}
+#line 1718 "syntactic_analyzer.tab.c"
+    break;
+
+  case 12:
+#line 143 "syntactic_analyzer.y"
                                                         {
+			int isMultipleSprite = strlen((yyvsp[-2].tile_content) -> tileset);
 			if(getsym((yyvsp[-4].IDENTIFIER) -> name) != NULL) {
 				printf("60 anios, una protesis\n");
 				exit(1);
 			}
 			putsym((yyvsp[-4].IDENTIFIER) -> name, _TILE_);
 			symrec *aux = getsym((yyvsp[-4].IDENTIFIER) -> name);
-			aux -> value.tile = *((yyvsp[-2].tile_content));
-
-			for(int i = 0; i < 3; i++) {
-				for(int j = 0; j < 3; j++) {
-					aux -> value.tile.rule[i][j] = (yyvsp[-1].rule) -> value.tile.rule[i][j];
-					printf("%d ", aux -> value.tile.rule[i][j]);
+			aux -> value.tile = (yyvsp[-2].tile_content);
+			
+			if((yyvsp[-1].rule) != NULL) {
+				for(int i = 0; i < 3; i++) {
+					for(int j = 0; j < 3; j++) {
+						aux -> value.tile -> rule[i][j] = (yyvsp[-1].rule) -> value.tile -> rule[i][j];
+					}
 				}
-				printf("\n");
 			}
+			aux -> value.tile -> id = (char*)malloc(sizeof(char)*strlen((yyvsp[-4].IDENTIFIER) -> name));
+			strcpy(aux -> value.tile -> id, (yyvsp[-4].IDENTIFIER) -> name);
+			(yyval.tile) = aux;
+			char *code2 = pop(&pila_codigo);
+			char *code1 = pop(&pila_codigo);
+			char *code = (char*)malloc(sizeof(char)*(strlen(code1)+strlen(code2) + 100));
+			if((yyvsp[-1].rule) != NULL) {
+				sprintf(
+					code,
+					"new Rule{%s matrixOfNeighbors=new int[,] %s",
+					code1,
+					code2
+					);
+			}
+			else {
+				sprintf(
+					code,
+					"new Rule{%s matrixOfNeighbors=new int[,] {}",
+					code1
+					);
+			}
+			push(&pila_codigo, code);
 							}
-#line 1650 "syntactic_analyzer.tab.c"
-    break;
-
-  case 12:
-#line 97 "syntactic_analyzer.y"
-                                                                      { printf("Seccion\n"); }
-#line 1656 "syntactic_analyzer.tab.c"
+#line 1763 "syntactic_analyzer.tab.c"
     break;
 
   case 13:
-#line 101 "syntactic_analyzer.y"
-                                                { printf("Declaracion"); }
-#line 1662 "syntactic_analyzer.tab.c"
+#line 186 "syntactic_analyzer.y"
+                                                                        {
+			if(getsym((yyvsp[-5].IDENTIFIER) -> name) != NULL) {
+				printf("Escuchame pequenio cuck. Mis gustos son God y los tuyos zzzz. Yo soy basado y tu das cringe. Yo soy un chad y tu un virgen, y no puedes hacer nada para cambiarlo\n");
+				exit(1);
+			}
+			putsym((yyvsp[-5].IDENTIFIER) -> name, _SECTION_);
+			symrec* aux = getsym((yyvsp[-5].IDENTIFIER) -> name);
+			aux -> type = _SECTION_;
+			aux -> value.algo = (yyvsp[-1].section_declaration);
+			aux -> value.algo -> algorithm = (char*)malloc(sizeof(char)*(strlen((yyvsp[-3].ALGORITHM))));
+			strcpy(aux -> value.algo -> algorithm, (yyvsp[-3].ALGORITHM));
+
+			char *code1 = pop(&pila_codigo);
+			char *code = (char*)malloc(sizeof(char)*(strlen(code1)+strlen((yyvsp[-3].ALGORITHM))+strlen((yyvsp[-5].IDENTIFIER) -> name)+100));
+			sprintf(code, "templates[\"%s\"] = new Template {%s algorithm = \"%s\"};", (yyvsp[-5].IDENTIFIER) -> name,code1, (yyvsp[-3].ALGORITHM));
+			push(&pila_codigo, code);
+									}
+#line 1785 "syntactic_analyzer.tab.c"
     break;
 
   case 14:
-#line 105 "syntactic_analyzer.y"
+#line 206 "syntactic_analyzer.y"
+                                                                        { 
+		(yyval.section_declaration) = (yyvsp[-4].section_declaration);
+		put_attribute((yyval.section_declaration),(yyvsp[-3].IDENTIFIER),(yyvsp[-1].constant));
+		char *code2 = pop(&pila_codigo);
+		char *code1 = pop(&pila_codigo);
+		char *code = malloc(sizeof(char)*(strlen((yyvsp[-3].IDENTIFIER) -> name) + strlen(code2) + 100 + strlen(code1)));
+		sprintf(code, "%s %s = %s,", code1, (yyvsp[-3].IDENTIFIER) -> name, code2);
+		push(&pila_codigo, code);
+
+									}
+#line 1800 "syntactic_analyzer.tab.c"
+    break;
+
+  case 15:
+#line 216 "syntactic_analyzer.y"
+                                                                        {
+		(yyval.section_declaration) = (Section*)malloc(sizeof(Section));
+		char *code1 = pop(&pila_codigo);
+		char *code = malloc(sizeof(char)*(strlen((yyvsp[-3].IDENTIFIER) -> name) + strlen(code1) + 100));
+		sprintf(code, "%s = %s,", (yyvsp[-3].IDENTIFIER) -> name, code1);
+		push(&pila_codigo, code);
+									}
+#line 1812 "syntactic_analyzer.tab.c"
+    break;
+
+  case 16:
+#line 225 "syntactic_analyzer.y"
                                                                                         {
+			printf("tile_content");
 			(yyval.tile_content) = (Tile*)malloc(sizeof(Tile));
 			(yyval.tile_content) -> name = (char*) malloc(sizeof(char)*strlen((yyvsp[-9].CONST_STRING) -> value._string));
 			strcpy((yyval.tile_content) -> name, (yyvsp[-9].CONST_STRING) -> value._string);
 			(yyval.tile_content) -> tileset = (char*) malloc(sizeof(char)*strlen((yyvsp[-5].CONST_STRING) -> value._string));
-			strcpy((yyval.tile_content) -> name, (yyvsp[-5].CONST_STRING) -> value._string);
-			(yyval.tile_content) -> flag = (yyvsp[-1].CONST_BOOL) -> value._bool;
-								}
-#line 1675 "syntactic_analyzer.tab.c"
-    break;
+			strcpy((yyval.tile_content) -> tileset, (yyvsp[-5].CONST_STRING) -> value._string);
+			(yyval.tile_content) -> flag = (yyvsp[-1].CONST_BOOL) -> value._bool;			
 
-  case 15:
-#line 116 "syntactic_analyzer.y"
-                                   { printf("Funcion principal\n"); }
-#line 1681 "syntactic_analyzer.tab.c"
-    break;
-
-  case 16:
-#line 120 "syntactic_analyzer.y"
-                                    { printf("statement"); }
-#line 1687 "syntactic_analyzer.tab.c"
+			char *code = (char*)malloc(sizeof(char)*(strlen((yyval.tile_content) -> name) + strlen((yyval.tile_content) -> tileset) + 1000));
+			sprintf(code,
+				"spritePath=\"%s\", spriteMultiplePath=\"%s\",isDefault=%s,isMultipleSprite=%s,",
+					(yyval.tile_content) -> name,
+					(yyval.tile_content) -> tileset,
+					((yyval.tile_content) -> flag? "true" : "false"),
+					(strlen((yyval.tile_content)->tileset)? "true":"false")
+				);
+			push(&pila_codigo, code);
+											}
+#line 1836 "syntactic_analyzer.tab.c"
     break;
 
   case 17:
-#line 121 "syntactic_analyzer.y"
-                                     { printf("statement code_block"); }
-#line 1693 "syntactic_analyzer.tab.c"
+#line 247 "syntactic_analyzer.y"
+                                   { }
+#line 1842 "syntactic_analyzer.tab.c"
     break;
 
   case 18:
-#line 122 "syntactic_analyzer.y"
-                                 { yyerrok; }
-#line 1699 "syntactic_analyzer.tab.c"
+#line 251 "syntactic_analyzer.y"
+                                    { /*printf("statement");*/ }
+#line 1848 "syntactic_analyzer.tab.c"
     break;
 
   case 19:
-#line 125 "syntactic_analyzer.y"
-                                {printf("xd\n");}
-#line 1705 "syntactic_analyzer.tab.c"
+#line 252 "syntactic_analyzer.y"
+                                     { /*printf("statement code_block");*/ }
+#line 1854 "syntactic_analyzer.tab.c"
     break;
 
   case 20:
-#line 126 "syntactic_analyzer.y"
-                                                        {
-			(yyval.rule) = (symrec*)malloc(sizeof(symrec));	
-			for(int i = 0; i < 3; i++)
-				(yyval.rule) -> value.tile.rule[0][i]= (yyvsp[-5].vector) -> value._vector[i];
-			for(int i = 0; i < 3; i++)
-				(yyval.rule) -> value.tile.rule[1][i]= (yyvsp[-3].vector) -> value._vector[i];
-			for(int i = 0; i < 3; i++)
-				(yyval.rule) -> value.tile.rule[2][i]= (yyvsp[-1].vector) -> value._vector[i];
-			for(int i = 0; i < 3; i++) {
-				for(int j = 0; j < 3; j++) {
-					printf("%d ", (yyval.rule) -> value.tile.rule[i][j]);
-				}
-				printf("\n");
-			}
-							}
-#line 1725 "syntactic_analyzer.tab.c"
+#line 253 "syntactic_analyzer.y"
+                                 { yyerrok; }
+#line 1860 "syntactic_analyzer.tab.c"
     break;
 
   case 21:
-#line 143 "syntactic_analyzer.y"
+#line 256 "syntactic_analyzer.y"
+                                { (yyval.rule) = NULL; }
+#line 1866 "syntactic_analyzer.tab.c"
+    break;
+
+  case 22:
+#line 257 "syntactic_analyzer.y"
+                                                        {
+			(yyval.rule) = (symrec*)malloc(sizeof(symrec));	
+			(yyval.rule) -> value.tile = (Tile*)malloc(sizeof(Tile));
+			for(int i = 0; i < 3; i++)
+				(yyval.rule) -> value.tile -> rule[0][i]= (yyvsp[-5].vector) -> value._vector[i];
+			for(int i = 0; i < 3; i++)
+				(yyval.rule) -> value.tile -> rule[1][i]= (yyvsp[-3].vector) -> value._vector[i];
+			for(int i = 0; i < 3; i++)
+				(yyval.rule) -> value.tile -> rule[2][i]= (yyvsp[-1].vector) -> value._vector[i];
+			char *code3 = pop(&pila_codigo);
+			char *code2 = pop(&pila_codigo);
+			char *code1 = pop(&pila_codigo);
+			char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + strlen(code3) + 10));
+			sprintf(code, "{%s,%s,%s}", code1, code2, code3);
+			push(&pila_codigo, code);
+
+							}
+#line 1888 "syntactic_analyzer.tab.c"
+    break;
+
+  case 23:
+#line 276 "syntactic_analyzer.y"
                                                         {
 			checkTypes((yyvsp[-5].expression) -> type, (yyvsp[-3].expression) -> type);
 			checkTypes((yyvsp[-3].expression) -> type, (yyvsp[-1].expression) -> type);
@@ -1736,48 +1899,48 @@ yyreduce:
 			(yyval.vector) -> value._vector[0] = (yyvsp[-5].expression) -> value._int;
 			(yyval.vector) -> value._vector[1] = (yyvsp[-3].expression) -> value._int; 
 			(yyval.vector) -> value._vector[2] = (yyvsp[-1].expression) -> value._int;
+			char *code3 = pop(&pila_codigo);
+			char *code2 = pop(&pila_codigo);
+			char *code1 = pop(&pila_codigo);
+			char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + strlen(code3) + 10));
+			sprintf(code, "{%s,%s,%s}", code1, code2, code3);
+			push(&pila_codigo, code);
 							}
-#line 1741 "syntactic_analyzer.tab.c"
-    break;
-
-  case 22:
-#line 156 "syntactic_analyzer.y"
-                                 { printf("variable\n"); }
-#line 1747 "syntactic_analyzer.tab.c"
-    break;
-
-  case 23:
-#line 157 "syntactic_analyzer.y"
-                       { printf("expresion\n"); }
-#line 1753 "syntactic_analyzer.tab.c"
+#line 1910 "syntactic_analyzer.tab.c"
     break;
 
   case 24:
-#line 158 "syntactic_analyzer.y"
-                       { printf("funcion\n"); }
-#line 1759 "syntactic_analyzer.tab.c"
+#line 295 "syntactic_analyzer.y"
+                                        { /*printf("variable\n");*/ }
+#line 1916 "syntactic_analyzer.tab.c"
     break;
 
   case 25:
-#line 159 "syntactic_analyzer.y"
-                       { printf("for\n"); }
-#line 1765 "syntactic_analyzer.tab.c"
+#line 296 "syntactic_analyzer.y"
+                                        { /*printf("expresion\n");*/}
+#line 1922 "syntactic_analyzer.tab.c"
     break;
 
   case 26:
-#line 160 "syntactic_analyzer.y"
-                       { printf("while\n"); }
-#line 1771 "syntactic_analyzer.tab.c"
+#line 297 "syntactic_analyzer.y"
+                                        { /*printf("for\n");*/ }
+#line 1928 "syntactic_analyzer.tab.c"
     break;
 
   case 27:
-#line 161 "syntactic_analyzer.y"
-                       { printf("if\n"); }
-#line 1777 "syntactic_analyzer.tab.c"
+#line 298 "syntactic_analyzer.y"
+                                        { /*printf("while\n");*/ }
+#line 1934 "syntactic_analyzer.tab.c"
     break;
 
   case 28:
-#line 164 "syntactic_analyzer.y"
+#line 299 "syntactic_analyzer.y"
+                                        { /*printf("if\n");*/ }
+#line 1940 "syntactic_analyzer.tab.c"
+    break;
+
+  case 29:
+#line 302 "syntactic_analyzer.y"
                                                         {
 		if(getsym((yyvsp[-2].variable) -> name) != NULL) {
 			printf("Redeclaracion de variable!!!\n");
@@ -1791,15 +1954,12 @@ yyreduce:
 		putsym((yyvsp[-2].variable) -> name, (yyvsp[-3].type) -> type);
 		symrec* aux = getsym((yyvsp[-2].variable) -> name);
 		assignUnary(aux, (yyvsp[0].expression), '=');
-		printf("%s: %d\n", (yyvsp[-2].variable) -> name, aux -> value._bool);
-		printf("%s: %d\n", (yyvsp[-2].variable) -> name, aux -> value._int);
-		printf("%s: %f\n", (yyvsp[-2].variable) -> name, aux -> value._double);
 							}
-#line 1799 "syntactic_analyzer.tab.c"
+#line 1959 "syntactic_analyzer.tab.c"
     break;
 
-  case 29:
-#line 181 "syntactic_analyzer.y"
+  case 30:
+#line 316 "syntactic_analyzer.y"
                                                         { 
 		symrec *aux;
 		if((aux = getsym((yyvsp[0].variable) -> name)) == NULL) {
@@ -1815,14 +1975,12 @@ yyreduce:
 		assignUnary((yyval.variable_declaration), aux, '=');
 		(yyval.variable_declaration) -> type = aux -> type;
 		putsym((yyvsp[-2].variable) -> name, aux -> type);
-		printf("%s: %d\n", (yyvsp[-2].variable) -> name, (yyval.variable_declaration) -> value._int);
-		printf("tipo idenfificador = idenfificador\n"); 
 							}
-#line 1822 "syntactic_analyzer.tab.c"
+#line 1980 "syntactic_analyzer.tab.c"
     break;
 
-  case 30:
-#line 199 "syntactic_analyzer.y"
+  case 31:
+#line 332 "syntactic_analyzer.y"
                                                         { 
 		if(getsym((yyvsp[0].variable) -> name) != NULL) {
 			printf("La variable se redeclaro\n");
@@ -1830,165 +1988,221 @@ yyreduce:
 		}
 		(yyval.variable_declaration) -> type = (yyvsp[-1].type) -> type;
 		putsym((yyvsp[0].variable) -> name, (yyvsp[-1].type) -> type);
-		printf("tipo idenfificador\n"); 
+		// printf("tipo idenfificador\n"); 
 							}
-#line 1836 "syntactic_analyzer.tab.c"
-    break;
-
-  case 31:
-#line 210 "syntactic_analyzer.y"
-                                                        {printf("Identificador[expresion]\n");}
-#line 1842 "syntactic_analyzer.tab.c"
+#line 1994 "syntactic_analyzer.tab.c"
     break;
 
   case 32:
-#line 211 "syntactic_analyzer.y"
-                                                        {printf("Identificador[constante]\n");}
-#line 1848 "syntactic_analyzer.tab.c"
+#line 341 "syntactic_analyzer.y"
+                                                        {
+		if(getsym((yyvsp[-3].IDENTIFIER) -> name) != NULL) {
+			printf("yabasayorar?\n");
+			exit(1);
+		}
+		char** array = (char**)malloc(sizeof(char*)*(yyvsp[-1].CONST_INT) -> value._int);
+		putsym((yyvsp[-3].IDENTIFIER) -> name, _SECTION_);
+		symrec* aux = getsym((yyvsp[-3].IDENTIFIER) -> name);
+		(yyvsp[-3].IDENTIFIER) -> value.array = array;
+		aux -> type = _SECTION_;
+		(yyval.variable_declaration) = aux;
+							}
+#line 2011 "syntactic_analyzer.tab.c"
     break;
 
   case 33:
-#line 212 "syntactic_analyzer.y"
-                                                        {printf("Identificador[Identificador]\n");}
-#line 1854 "syntactic_analyzer.tab.c"
+#line 355 "syntactic_analyzer.y"
+                                                        {
+		(yyval.variable) = getsym((yyvsp[-3].IDENTIFIER) -> name);
+		if((yyval.variable) == NULL) {
+			printf("Su pata del mameitor\n");
+			exit(1);
+		}
+		checkTypes(_INT_, (yyvsp[-1].expression) -> type);
+		(yyval.variable) = (symrec*)malloc(sizeof(symrec));
+		strcpy((yyval.variable) -> name, (yyvsp[-3].IDENTIFIER) -> name); 
+		(yyval.variable) -> value._int = (yyvsp[-1].expression) -> value._int;
+
+		char *code2 = pop(&pila_codigo);
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + 4));
+		strcpy(code, code1);
+		strcat(code, "[");
+		strcpy(code, code2);
+		strcat(code, "]");
+							}
+#line 2035 "syntactic_analyzer.tab.c"
     break;
 
   case 34:
-#line 213 "syntactic_analyzer.y"
+#line 374 "syntactic_analyzer.y"
                                                         {
-		printf("Identifier: %s\n", (yyvsp[0].IDENTIFIER) -> name);
 		strcpy((yyval.variable) -> name, (yyvsp[0].IDENTIFIER) -> name); 
-		printf("Identificador<---\n");
+		char *code = (char*)malloc(sizeof((yyvsp[0].IDENTIFIER) -> name));
+		strcpy(code, (yyvsp[0].IDENTIFIER) -> name);
+		push(&pila_codigo, code);
 							}
-#line 1864 "syntactic_analyzer.tab.c"
+#line 2046 "syntactic_analyzer.tab.c"
     break;
 
   case 35:
-#line 220 "syntactic_analyzer.y"
-                                                       { printf("while\n"); }
-#line 1870 "syntactic_analyzer.tab.c"
+#line 382 "syntactic_analyzer.y"
+                                                       { /*printf("while\n");*/ }
+#line 2052 "syntactic_analyzer.tab.c"
     break;
 
   case 36:
-#line 224 "syntactic_analyzer.y"
-                                                                                             { printf("for\n"); }
-#line 1876 "syntactic_analyzer.tab.c"
+#line 386 "syntactic_analyzer.y"
+                                                                                             { /*printf("for\n");*/ }
+#line 2058 "syntactic_analyzer.tab.c"
     break;
 
   case 37:
-#line 228 "syntactic_analyzer.y"
-                                                                                { printf("if\n"); }
-#line 1882 "syntactic_analyzer.tab.c"
+#line 390 "syntactic_analyzer.y"
+                                                                                { /*printf("if\n");*/ }
+#line 2064 "syntactic_analyzer.tab.c"
     break;
 
   case 38:
-#line 229 "syntactic_analyzer.y"
-                                                                                { printf("if else\n"); }
-#line 1888 "syntactic_analyzer.tab.c"
+#line 391 "syntactic_analyzer.y"
+                                                                                { /*printf("if else\n");*/ }
+#line 2070 "syntactic_analyzer.tab.c"
     break;
 
   case 39:
-#line 233 "syntactic_analyzer.y"
+#line 395 "syntactic_analyzer.y"
                                                         { 
 		(yyval.expression) = (symrec*)malloc(sizeof(symrec));
-		printf("constate: "); 
 		(yyval.expression) -> type = (yyvsp[0].constant) -> type; 
-		assignUnary((yyval.expression), (yyvsp[0].constant), '=');
-			
+		assignUnary((yyval.expression), (yyvsp[0].constant), '=');			
 							}
-#line 1900 "syntactic_analyzer.tab.c"
+#line 2080 "syntactic_analyzer.tab.c"
     break;
 
   case 40:
-#line 240 "syntactic_analyzer.y"
+#line 400 "syntactic_analyzer.y"
                                                         { 
 		(yyval.expression) = (symrec*)malloc(sizeof(symrec));
 		checkTypes((yyvsp[-2].expression) -> type, (yyvsp[0].expression) -> type);
 		(yyval.expression) -> type = (yyvsp[-2].expression) -> type;
 		assignValue((yyval.expression), (yyvsp[-2].expression), (yyvsp[0].expression), '+');
-		printf("expresion + expresion\n"); 
+		// printf("expresion + expresion\n"); 
+		char *code2 = pop(&pila_codigo);
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + 4));
+		strcpy(code, code1);
+		strcat(code, "+");
+		strcat(code, code2);
+		push(&pila_codigo, code);
+
+		
 							}
-#line 1912 "syntactic_analyzer.tab.c"
+#line 2101 "syntactic_analyzer.tab.c"
     break;
 
   case 41:
-#line 247 "syntactic_analyzer.y"
+#line 416 "syntactic_analyzer.y"
                                                         { 
 		(yyval.expression) = (symrec*)malloc(sizeof(symrec));
 		checkTypes((yyvsp[-2].expression)-> type, (yyvsp[0].expression) -> type);
 		(yyval.expression) -> type = (yyvsp[-2].expression) -> type;
 		assignValue((yyval.expression), (yyvsp[-2].expression), (yyvsp[0].expression), '-');
-          	printf("expresion - expresion\n"); 
+
+		char *code2 = pop(&pila_codigo);
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + 4));
+		strcpy(code, code1);
+		strcat(code, "-");
+		strcat(code, code2);
+		push(&pila_codigo, code);
+
+          	// printf("expresion - expresion\n"); 
               						}
-#line 1924 "syntactic_analyzer.tab.c"
+#line 2122 "syntactic_analyzer.tab.c"
     break;
 
   case 42:
-#line 254 "syntactic_analyzer.y"
+#line 432 "syntactic_analyzer.y"
                                                         { 
 		(yyval.expression) = (symrec*)malloc(sizeof(symrec));
 		checkTypes((yyvsp[-2].expression)-> type, (yyvsp[0].expression) -> type);
 		(yyval.expression) -> type = (yyvsp[-2].expression) -> type;
-		printf("$1 -> value: %d\n", (yyvsp[-2].expression) -> value._int);
-		printf("$3 -> value: %d\n", (yyvsp[0].expression) -> value._int);
-		printf("%p\n", (yyval.expression));
-		printf("%p\n", (yyvsp[-2].expression));
-		printf("%p\n", (yyvsp[0].expression));
 		assignValue((yyval.expression), (yyvsp[-2].expression), (yyvsp[0].expression), '*');
-		printf("ValMul: %d\n", (yyval.expression) -> value._int);
-		printf("expression * expression\n");
+
+		char *code2 = pop(&pila_codigo);
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + 4));
+		strcpy(code, code1);
+		strcat(code, "*");
+		strcat(code, code2);
+		push(&pila_codigo, code);
+
 		free((yyvsp[-2].expression));
 		free((yyvsp[0].expression));
               						}
-#line 1944 "syntactic_analyzer.tab.c"
+#line 2144 "syntactic_analyzer.tab.c"
     break;
 
   case 43:
-#line 269 "syntactic_analyzer.y"
+#line 449 "syntactic_analyzer.y"
                                                         { 
 		(yyval.expression) = (symrec*)malloc(sizeof(symrec));
 		checkTypes((yyvsp[-2].expression)-> type, (yyvsp[0].expression) -> type);
 		(yyval.expression) -> type = (yyvsp[-2].expression) -> type;
 		assignValue((yyval.expression), (yyvsp[-2].expression), (yyvsp[0].expression), '/');
-		printf("expression / expression\n"); 
+		
+		char *code2 = pop(&pila_codigo);
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + 4));
+		strcpy(code, code1);
+		strcat(code, "/");
+		strcat(code, code2);
+		push(&pila_codigo, code);
+
 		free((yyvsp[-2].expression));
 		free((yyvsp[0].expression));
               						}
-#line 1958 "syntactic_analyzer.tab.c"
+#line 2166 "syntactic_analyzer.tab.c"
     break;
 
   case 44:
-#line 278 "syntactic_analyzer.y"
-                                                        { printf("funcion\n"); }
-#line 1964 "syntactic_analyzer.tab.c"
-    break;
-
-  case 45:
-#line 279 "syntactic_analyzer.y"
+#line 466 "syntactic_analyzer.y"
                                                         { 
 		(yyval.expression) = (symrec*)malloc(sizeof(symrec));
 		(yyval.expression) -> type = (yyvsp[0].expression) -> type;
 		assignUnary((yyval.expression), (yyvsp[0].expression), '-');
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + 4));
+		code[0] = '-'; code[1] = '\0';
+		strcat(code, code1);
+		push(&pila_codigo, code);
+
 		free((yyvsp[0].expression));
 							}
-#line 1975 "syntactic_analyzer.tab.c"
+#line 2183 "syntactic_analyzer.tab.c"
     break;
 
-  case 46:
-#line 285 "syntactic_analyzer.y"
+  case 45:
+#line 478 "syntactic_analyzer.y"
                                                         { 
 		(yyval.expression) = (symrec*)malloc(sizeof(symrec));
 		(yyval.expression) -> type = (yyvsp[-1].expression) -> type;
 		assignUnary((yyval.expression), (yyvsp[-1].expression), '=');
-		printf("( %d )\n", (yyvsp[-1].expression) -> value._int);
-		printf("(expression)\n"); 
+
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + 4));
+		code[0] = '('; code[1] = '\0';
+		strcat(code, code1);
+		strcat(code, ")");
+		push(&pila_codigo, code);
+
 		free((yyvsp[-1].expression));
               						}
-#line 1988 "syntactic_analyzer.tab.c"
+#line 2202 "syntactic_analyzer.tab.c"
     break;
 
-  case 47:
-#line 293 "syntactic_analyzer.y"
+  case 46:
+#line 492 "syntactic_analyzer.y"
                                                         { 
 		(yyval.expression) = (symrec*)malloc(sizeof(symrec));
 		symrec* aux = getsym((yyvsp[-1].variable) -> name);
@@ -1999,14 +2213,20 @@ yyreduce:
 		(yyval.expression) -> type = aux -> type;
 		assignUnary(aux, aux, PLUSPLUS);
 		assignUnary((yyval.expression), aux, '=');
-		printf("idenfificado++\n"); 
+
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1)+5));
+		strcpy(code, code1);
+		strcat(code, "++");
+		push(&pila_codigo, code);
+
 		free((yyvsp[-1].variable));
               						}
-#line 2006 "syntactic_analyzer.tab.c"
+#line 2226 "syntactic_analyzer.tab.c"
     break;
 
-  case 48:
-#line 306 "syntactic_analyzer.y"
+  case 47:
+#line 511 "syntactic_analyzer.y"
                                                         { 
 		(yyval.expression) = (symrec*)malloc(sizeof(symrec));
 		symrec* aux = getsym((yyvsp[-1].variable) -> name);
@@ -2017,14 +2237,20 @@ yyreduce:
 		(yyval.expression) -> type = aux -> type;
 		assignUnary(aux, aux, MINUSMINUS);
 		assignUnary((yyval.expression), aux, '=');
-		printf("idenfificador--\n"); 
+
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1)+5));
+		strcpy(code, code1);
+		strcat(code, "--");
+		push(&pila_codigo, code);
+
 		free((yyvsp[-1].variable));
               						}
-#line 2024 "syntactic_analyzer.tab.c"
+#line 2250 "syntactic_analyzer.tab.c"
     break;
 
-  case 49:
-#line 319 "syntactic_analyzer.y"
+  case 48:
+#line 530 "syntactic_analyzer.y"
                                                         { 
 		symrec* aux = getsym((yyvsp[0].variable) -> name);
 		if(aux == NULL) {
@@ -2035,21 +2261,23 @@ yyreduce:
 		assignUnary((yyval.expression), aux, '=');
 		free((yyvsp[0].variable));
 							}
-#line 2039 "syntactic_analyzer.tab.c"
+#line 2265 "syntactic_analyzer.tab.c"
     break;
 
-  case 50:
-#line 329 "syntactic_analyzer.y"
+  case 49:
+#line 540 "syntactic_analyzer.y"
                                                         { 
 		(yyval.expression) = (symrec*)malloc(sizeof(symrec));
 		(yyval.expression) -> type = _BOOL_;
 		(yyval.expression) -> value._bool = (yyvsp[0].condition) -> value._bool;
+		int actLen = strlen(pila_codigo -> code);
+
 							}
-#line 2049 "syntactic_analyzer.tab.c"
+#line 2277 "syntactic_analyzer.tab.c"
     break;
 
-  case 51:
-#line 334 "syntactic_analyzer.y"
+  case 50:
+#line 547 "syntactic_analyzer.y"
                                                         { 
 		symrec* aux = getsym((yyvsp[-2].variable) -> name);
 		if(aux == NULL) {
@@ -2060,55 +2288,83 @@ yyreduce:
 		(yyval.expression) -> type = (yyvsp[0].expression) -> type;
 		assignUnary(aux, (yyvsp[0].expression), '=');
 		assignUnary((yyval.expression), aux, '=');
-		printf("idenfificador = expresion\n"); 
+
+		char *code2 = pop(&pila_codigo);
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + 10));
+		strcpy(code, code1);
+		strcat(code, "=");
+		strcat(code, code2);
+		push(&pila_codigo, code);
+
 		free((yyvsp[0].expression));
 		free((yyvsp[-2].variable));
 					      		}
-#line 2068 "syntactic_analyzer.tab.c"
+#line 2304 "syntactic_analyzer.tab.c"
     break;
 
-  case 52:
-#line 351 "syntactic_analyzer.y"
-                                                { 
+  case 51:
+#line 573 "syntactic_analyzer.y"
+                                                                { 
 		(yyval.condition) = (symrec*)malloc(sizeof(symrec));
 		checkTypes((yyvsp[-2].condition) -> type, (yyvsp[0].condition) -> type);
 		assignValue((yyval.condition), (yyvsp[-2].condition), (yyvsp[0].condition), (yyvsp[-1].logical_operator)); 
-		printf("condicion op condicion\n"); 
-              					}
-#line 2079 "syntactic_analyzer.tab.c"
+		char *code3 = pop(&pila_codigo);
+		char *code2 = pop(&pila_codigo);
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + strlen(code3) + 10));
+		strcpy(code, code1);
+		strcat(code, code2);
+		strcat(code, code3);
+		push(&pila_codigo, code);
+
+              						    	}
+#line 2323 "syntactic_analyzer.tab.c"
+    break;
+
+  case 52:
+#line 587 "syntactic_analyzer.y"
+                                                                { 
+		(yyval.condition) = (symrec*)malloc(sizeof(symrec));
+		checkTypes((yyvsp[-2].expression) -> type, (yyvsp[0].expression) -> type);
+		(yyval.condition) -> type = _BOOL_;
+		assignValue((yyval.condition), (yyvsp[-2].expression), (yyvsp[0].expression), (yyvsp[-1].comparation_operator));
+		char *code3 = pop(&pila_codigo);
+		char *code2 = pop(&pila_codigo);
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + strlen(code3) + 10));
+		strcpy(code, code1);
+		strcat(code, code2);
+		strcat(code, code3);
+		push(&pila_codigo, code);
+		free((yyvsp[-2].expression));
+		free((yyvsp[0].expression));
+              							}
+#line 2344 "syntactic_analyzer.tab.c"
     break;
 
   case 53:
-#line 357 "syntactic_analyzer.y"
-                                                            { 
-		printf("xd: %d\n", (yyvsp[-1].comparation_operator));
-		(yyval.condition) = (symrec*)malloc(sizeof(symrec));
-		checkTypes((yyvsp[-2].expression) -> type, (yyvsp[0].expression) -> type);
-
-		(yyval.condition) -> type = _BOOL_;
-		assignValue((yyval.condition), (yyvsp[-2].expression), (yyvsp[0].expression), (yyvsp[-1].comparation_operator));
-		free((yyvsp[-2].expression));
-		free((yyvsp[0].expression));
-		printf("variable\n"); 
-              						}
-#line 2095 "syntactic_analyzer.tab.c"
-    break;
-
-  case 54:
-#line 368 "syntactic_analyzer.y"
-                                                        { 
+#line 603 "syntactic_analyzer.y"
+                                                                { 
 		(yyval.condition) = (symrec*)malloc(sizeof(symrec));
 		(yyval.condition) -> type = _BOOL_;
 		(yyval.condition) -> value._bool = (yyvsp[0].CONST_BOOL) -> value._bool;
 		free((yyvsp[0].CONST_BOOL));
-		printf("constante: ");
-              						}
-#line 2107 "syntactic_analyzer.tab.c"
+		char code[10];
+		if((yyval.condition) -> value._bool) {
+			strcpy(code, "true");
+		}
+		else{
+			strcpy(code, "false");
+		}
+		push(&pila_codigo, code);
+              							}
+#line 2363 "syntactic_analyzer.tab.c"
     break;
 
-  case 55:
-#line 375 "syntactic_analyzer.y"
-                                               { 
+  case 54:
+#line 617 "syntactic_analyzer.y"
+                                                                { 
 		(yyval.condition) = (symrec*)malloc(sizeof(symrec));
         	if((yyvsp[0].condition) -> type != _BOOL_) {
         		printf("No coinciden los tipos mi tio\n");
@@ -2116,14 +2372,20 @@ yyreduce:
           	}
 		(yyval.condition) -> type = CONST_BOOL;
 		assignUnary((yyval.condition), (yyvsp[0].condition), '!');
-		printf("no condicion\n");
+		char *code = (char*)malloc(sizeof(char)*(strlen(pila_codigo -> code) + 10));
+		code[0] = '!'; code[1] = '\0';
+		strcat(code, pila_codigo -> code);
+		pop(&pila_codigo);
+		push(&pila_codigo, code);
+
+		// printf("no condicion\n");
               }
-#line 2122 "syntactic_analyzer.tab.c"
+#line 2384 "syntactic_analyzer.tab.c"
     break;
 
-  case 56:
-#line 385 "syntactic_analyzer.y"
-                                                {
+  case 55:
+#line 633 "syntactic_analyzer.y"
+                                                                {
 		symrec *aux = getsym((yyvsp[0].variable) -> name);
 		if(aux == NULL || aux -> type != _BOOL_) {
 			printf("No nos interesa tu rollo, nomas que funcione\n");
@@ -2131,204 +2393,289 @@ yyreduce:
 		}
 		(yyval.condition) -> value._bool = !(aux -> value._bool);
 		(yyval.condition) -> type = _BOOL_;
+		char *code = (char*)malloc(sizeof(char)*(strlen(pila_codigo -> code) + 10));
+		code[0] = '!'; code[1] = '\0';
+		strcat(code, pila_codigo -> code);
+		push(&pila_codigo, code);
+		pop(&pila_codigo);
 		free((yyvsp[0].variable));
-						}
-#line 2137 "syntactic_analyzer.tab.c"
+								}
+#line 2404 "syntactic_analyzer.tab.c"
+    break;
+
+  case 56:
+#line 648 "syntactic_analyzer.y"
+                                                                { 
+		(yyval.condition) = (symrec*)malloc(sizeof(symrec));
+		(yyval.condition) -> type = (yyvsp[-1].condition) -> type;
+		char *code = (char*)malloc(sizeof(char)*(strlen(pila_codigo -> code) + 10));
+		code[0] = '('; code[1] = '\0';
+		strcat(code, pila_codigo -> code);
+		strcat(code, ")");
+		pop(&pila_codigo);
+		push(&pila_codigo, code);
+              							}
+#line 2419 "syntactic_analyzer.tab.c"
     break;
 
   case 57:
-#line 395 "syntactic_analyzer.y"
-                                                { 
-		(yyval.condition) = (symrec*)malloc(sizeof(symrec));
-		(yyval.condition) -> type = (yyvsp[-1].condition) -> type;
-		assignUnary((yyval.condition),(yyvsp[-1].condition),'=');
-		printf("(condicion)\n"); 
-              					}
-#line 2148 "syntactic_analyzer.tab.c"
+#line 661 "syntactic_analyzer.y"
+                                                        { 
+					(yyval.logical_operator) = (yyvsp[0].AND_OP); 
+					char code[4] = "&&";
+					push(&pila_codigo,  code);
+							}
+#line 2429 "syntactic_analyzer.tab.c"
     break;
 
   case 58:
-#line 404 "syntactic_analyzer.y"
-                                                { (yyval.logical_operator) = (yyvsp[0].AND_OP); }
-#line 2154 "syntactic_analyzer.tab.c"
+#line 666 "syntactic_analyzer.y"
+                                                        { 
+					(yyval.logical_operator) = (yyvsp[0].OR_OP); 
+					char code[4] = "||";
+					push(&pila_codigo, code);
+							}
+#line 2439 "syntactic_analyzer.tab.c"
     break;
 
   case 59:
-#line 405 "syntactic_analyzer.y"
-                                                { (yyval.logical_operator) = (yyvsp[0].OR_OP); }
-#line 2160 "syntactic_analyzer.tab.c"
+#line 673 "syntactic_analyzer.y"
+                                                        { 
+					(yyval.comparation_operator) = (yyvsp[0].GREATER_EQ); 	
+					char code[4] = ">=";
+					push(&pila_codigo, code);
+							}
+#line 2449 "syntactic_analyzer.tab.c"
     break;
 
   case 60:
-#line 408 "syntactic_analyzer.y"
-                                                { (yyval.comparation_operator) = (yyvsp[0].GREATER_EQ); }
-#line 2166 "syntactic_analyzer.tab.c"
+#line 678 "syntactic_analyzer.y"
+                                                        { 
+					(yyval.comparation_operator) = (yyvsp[0].GREATER);
+					char code[4] = ">";
+					push(&pila_codigo, code);
+							}
+#line 2459 "syntactic_analyzer.tab.c"
     break;
 
   case 61:
-#line 409 "syntactic_analyzer.y"
-                                                { (yyval.comparation_operator) = (yyvsp[0].GREATER); printf("Valor: %d\n", (yyvsp[0].GREATER)); }
-#line 2172 "syntactic_analyzer.tab.c"
+#line 683 "syntactic_analyzer.y"
+                                                        { 
+					(yyval.comparation_operator) = (yyvsp[0].LESS_EQ); 
+					char code[4] = "<=";
+					push(&pila_codigo, code);
+							}
+#line 2469 "syntactic_analyzer.tab.c"
     break;
 
   case 62:
-#line 410 "syntactic_analyzer.y"
-                                                { (yyval.comparation_operator) = (yyvsp[0].LESS_EQ); }
-#line 2178 "syntactic_analyzer.tab.c"
+#line 688 "syntactic_analyzer.y"
+                                                        { 
+					(yyval.comparation_operator) = (yyvsp[0].LESS); 	
+					char code[4] = "<";
+					push(&pila_codigo, code);
+							}
+#line 2479 "syntactic_analyzer.tab.c"
     break;
 
   case 63:
-#line 411 "syntactic_analyzer.y"
-                                                { (yyval.comparation_operator) = (yyvsp[0].LESS); }
-#line 2184 "syntactic_analyzer.tab.c"
+#line 693 "syntactic_analyzer.y"
+                                                        { 
+					(yyval.comparation_operator) = (yyvsp[0].NEQ); 	
+					char code[4] = "<";
+					push(&pila_codigo, code);
+							}
+#line 2489 "syntactic_analyzer.tab.c"
     break;
 
   case 64:
-#line 412 "syntactic_analyzer.y"
-                                                { (yyval.comparation_operator) = (yyvsp[0].NEQ); }
-#line 2190 "syntactic_analyzer.tab.c"
+#line 698 "syntactic_analyzer.y"
+                                                        { 
+					(yyval.comparation_operator) = (yyvsp[0].EQ); 
+					char code[4] = "==";
+					push(&pila_codigo, code);
+							}
+#line 2499 "syntactic_analyzer.tab.c"
     break;
 
   case 65:
-#line 413 "syntactic_analyzer.y"
-                                                { (yyval.comparation_operator) = (yyvsp[0].EQ); }
-#line 2196 "syntactic_analyzer.tab.c"
-    break;
-
-  case 66:
-#line 416 "syntactic_analyzer.y"
+#line 705 "syntactic_analyzer.y"
                         { 
 		(yyval.constant) = (symrec*)malloc(sizeof(symrec));
 		(yyval.constant) -> value._int = (yyvsp[0].CONST_INT) -> value._int; 
 		(yyval.constant) -> type = _INT_; 
-		printf("const_int\n"); 
+		char code[25];
+		sprintf(code, "%d", (yyval.constant) -> value._int);
+		push(&pila_codigo, code);
 		}
-#line 2207 "syntactic_analyzer.tab.c"
+#line 2512 "syntactic_analyzer.tab.c"
     break;
 
-  case 67:
-#line 422 "syntactic_analyzer.y"
+  case 66:
+#line 713 "syntactic_analyzer.y"
                         { 
 		(yyval.constant) = (symrec*)malloc(sizeof(symrec));
 		(yyval.constant) -> value._float = (yyvsp[0].CONST_FLOAT) -> value._float; 
 		(yyval.constant) -> type = _FLOAT_; 
-		printf("const_float\n"); 
+		char code[25];
+		sprintf(code, "%f", (yyval.constant) -> value._float);
+		push(&pila_codigo, code);
 		}
-#line 2218 "syntactic_analyzer.tab.c"
+#line 2525 "syntactic_analyzer.tab.c"
     break;
 
-  case 68:
-#line 428 "syntactic_analyzer.y"
+  case 67:
+#line 721 "syntactic_analyzer.y"
                         { 
 		(yyval.constant) = (symrec*)malloc(sizeof(symrec));
 		(yyval.constant) -> value._double = (yyvsp[0].CONST_DOUBLE) -> value._double; 
 		(yyval.constant) -> type = _DOUBLE_; 
+		char code[25];
+		sprintf(code, "%f", (yyval.constant) -> value._double);
+		push(&pila_codigo, code);
 		printf("const_double\n"); 
 		}
-#line 2229 "syntactic_analyzer.tab.c"
+#line 2539 "syntactic_analyzer.tab.c"
     break;
 
-  case 69:
-#line 434 "syntactic_analyzer.y"
+  case 68:
+#line 730 "syntactic_analyzer.y"
                         { 
 		(yyval.constant) = (symrec*)malloc(sizeof(symrec));
 		(yyval.constant) -> value._char = (yyvsp[0].CONST_CHAR) -> value._char; 
 		(yyval.constant) -> type = _CHAR_; 
-		printf("const_char\n"); 
+		// printf("const_char\n"); 
+		char code[10];
+		sprintf(code, "'%c'", (yyval.constant) -> value._char);
+		push(&pila_codigo, code);
 		}
-#line 2240 "syntactic_analyzer.tab.c"
+#line 2553 "syntactic_analyzer.tab.c"
     break;
 
-  case 70:
-#line 440 "syntactic_analyzer.y"
+  case 69:
+#line 739 "syntactic_analyzer.y"
                         { 
 		(yyval.constant) = (symrec*)malloc(sizeof(symrec));
 		(yyval.constant) -> value._bool = (yyvsp[0].CONST_BOOL) -> value._bool; 
 		(yyval.constant) -> type = _BOOL_; 
-		printf("const_bool\n"); 
+		char code[10];
+		sprintf(code, "%s", ((yyval.constant) -> value._bool? "true" : "false"));
+		push(&pila_codigo, code);
+		// printf("const_bool\n"); 
 		}
-#line 2251 "syntactic_analyzer.tab.c"
+#line 2567 "syntactic_analyzer.tab.c"
     break;
 
-  case 71:
-#line 446 "syntactic_analyzer.y"
+  case 70:
+#line 748 "syntactic_analyzer.y"
                        {
 		(yyval.constant) = (symrec*)malloc(sizeof(symrec));	
 		int len = strlen((yyvsp[0].CONST_STRING) -> value._string);
 		(yyval.constant) -> value._string = (char*)malloc(sizeof(char)*len);
 		strcpy((yyval.constant) -> value._string, (yyvsp[0].CONST_STRING) -> value._string);
 		(yyval.constant) -> type = _STRING_;
+		char* code = (char*)malloc(sizeof(char)*(strlen((yyvsp[0].CONST_STRING) -> value._string) + 4));
+		code[0] = '\"';
+		code[1] = '\0';
+		code = strcat(code, (yyvsp[0].CONST_STRING) -> value._string);
+		code = strcat(code, (yyvsp[0].CONST_STRING) -> value._string);
+		code = strcat(code, "\"");
+		push(&pila_codigo, code);
 		free((yyvsp[0].CONST_STRING));
 		}
-#line 2264 "syntactic_analyzer.tab.c"
+#line 2587 "syntactic_analyzer.tab.c"
+    break;
+
+  case 71:
+#line 766 "syntactic_analyzer.y"
+                   { 
+		(yyval.type) = (symrec*)malloc(sizeof(symrec));
+		(yyval.type) -> type = _INT_; 
+		char code[7];
+		sprintf(code, "int");
+		push(&pila_codigo, code);
+		}
+#line 2599 "syntactic_analyzer.tab.c"
     break;
 
   case 72:
-#line 457 "syntactic_analyzer.y"
+#line 773 "syntactic_analyzer.y"
                    { 
 		(yyval.type) = (symrec*)malloc(sizeof(symrec));
-		(yyval.type) -> type = _INT_; printf("int\n"); 
+		(yyval.type) -> type = _FLOAT_; 
+		char code[7];
+		sprintf(code, "float");
+		push(&pila_codigo, code);
 		}
-#line 2273 "syntactic_analyzer.tab.c"
+#line 2611 "syntactic_analyzer.tab.c"
     break;
 
   case 73:
-#line 461 "syntactic_analyzer.y"
+#line 780 "syntactic_analyzer.y"
                    { 
 		(yyval.type) = (symrec*)malloc(sizeof(symrec));
-		(yyval.type) -> type = _FLOAT_; printf("float\n"); 
+		(yyval.type) -> type = _DOUBLE_; 
+		char code[7];
+		sprintf(code, "double");
+		push(&pila_codigo, code);
 		}
-#line 2282 "syntactic_analyzer.tab.c"
+#line 2623 "syntactic_analyzer.tab.c"
     break;
 
   case 74:
-#line 465 "syntactic_analyzer.y"
+#line 787 "syntactic_analyzer.y"
                    { 
 		(yyval.type) = (symrec*)malloc(sizeof(symrec));
-		(yyval.type) -> type = _DOUBLE_; printf("double\n"); 
+		(yyval.type) -> type = _LONG_; 
+		char code[7];
+		sprintf(code, "long");
+		push(&pila_codigo, code);
+		// printf("long\n"); 
 		}
-#line 2291 "syntactic_analyzer.tab.c"
+#line 2636 "syntactic_analyzer.tab.c"
     break;
 
   case 75:
-#line 469 "syntactic_analyzer.y"
+#line 795 "syntactic_analyzer.y"
                    { 
 		(yyval.type) = (symrec*)malloc(sizeof(symrec));
-		(yyval.type) -> type = _LONG_; printf("long\n"); 
+		(yyval.type) -> type = _BOOL_; 
+		char code[7];
+		sprintf(code, "bool");
+		push(&pila_codigo, code);
+		// printf("bool\n"); 
 		}
-#line 2300 "syntactic_analyzer.tab.c"
+#line 2649 "syntactic_analyzer.tab.c"
     break;
 
   case 76:
-#line 473 "syntactic_analyzer.y"
+#line 803 "syntactic_analyzer.y"
                    { 
 		(yyval.type) = (symrec*)malloc(sizeof(symrec));
-		(yyval.type) -> type = _BOOL_; printf("bool\n"); 
+		(yyval.type) -> type = _CHAR_; 
+		char code[7];
+		sprintf(code, "char");
+		push(&pila_codigo, code);
+		// printf("char\n"); 
 		}
-#line 2309 "syntactic_analyzer.tab.c"
+#line 2662 "syntactic_analyzer.tab.c"
     break;
 
   case 77:
-#line 477 "syntactic_analyzer.y"
-                   { 
-		(yyval.type) = (symrec*)malloc(sizeof(symrec));
-		(yyval.type) -> type = _CHAR_; printf("char\n"); 
-		}
-#line 2318 "syntactic_analyzer.tab.c"
-    break;
-
-  case 78:
-#line 481 "syntactic_analyzer.y"
+#line 811 "syntactic_analyzer.y"
                    {
 		(yyval.type)  = (symrec*) malloc(sizeof(symrec));
 		(yyval.type) -> type = _STRING_; 
-		printf("String\n");
+		char code[7];
+		sprintf(code, "string");
+		push(&pila_codigo, code);
+		// printf("String\n");
 		}
-#line 2328 "syntactic_analyzer.tab.c"
+#line 2675 "syntactic_analyzer.tab.c"
     break;
 
 
-#line 2332 "syntactic_analyzer.tab.c"
+#line 2679 "syntactic_analyzer.tab.c"
 
       default: break;
     }
@@ -2560,35 +2907,35 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 489 "syntactic_analyzer.y"
+#line 822 "syntactic_analyzer.y"
 
 tabla_hash sym_table;
-void init_table() {
+Pila *pila_codigo;
+void init() {
 	int i = 0;
 	sym_table.MOD = 9887;
 	for(i = 0; i < sym_table.MOD; i++) {
 		sym_table.table[i] = NULL;
 	}
+	pila_codigo = NULL;
 }
 int get_hash(char const *name) {
-	printf("gethash\n");
 	int i = 0;
 	int ret = 0;
 	int pot = 1;
 	int prime = 31;
-	printf("Name: %s\n", name);
+	// printf("Name: %s\n", name);
 	for(i = 0; i < strlen(name); i++) {
 		ret += (name[i]*pot)%sym_table.MOD;
 		if(ret > sym_table.MOD)
 			ret -= sym_table.MOD;
 		pot = (pot * prime) % sym_table.MOD;
 	}
-	printf("Valor hash: %d\n", ret);
+	// printf("Valor hash: %d\n", ret);
 	return ret % sym_table.MOD;
 }
 
 void putsym(char const *name, int sym_type) {
-	printf("putsym\n");
 	int hash_val = get_hash(name);
 	symrec *new_one = (symrec *) malloc (sizeof (symrec));
 	strcpy(new_one -> name, name);
@@ -2596,18 +2943,37 @@ void putsym(char const *name, int sym_type) {
 	sym_table.table[hash_val] = new_one;
 }
 symrec *getsym(char const *name) {
-	printf("getsym\n");
 	int hash_val = get_hash(name);
 	return sym_table.table[hash_val];
 }
+char *pop(Pila **p) {
+	if((*p) == NULL) {
+		printf("Error, la pila esta vacia\n");
+		exit(1);
+	}
+	Pila* aux = (*p);
+	char *code = (char*)malloc(sizeof(char)*(strlen((*p) -> code) + 4));
+	strcpy(code, (*p) -> code);
+	(*p) = (*p) -> next;
+	free(aux);
+	return code;
+}
+void push(Pila **p, char* code) {
+	printf("Mete: %s\n", code);
+	Pila *aux = (Pila*)malloc(sizeof(Pila));
+	aux -> next = (*p);
+	aux -> code = (char*)malloc(sizeof(char)*(strlen(code) + 4));
+	strcpy(aux -> code, code);
+	(*p) = aux;
+}
 int main(int argc, char** argv) {
-	init_table();
+	init();
 	yyparse();
 	return 0;
 }
 
 void assignUnary(symrec* $$, symrec* $1, int opc) {
- 	printf("$1 -> type = %d\n", $1 -> type);
+ 	// printf("$1 -> type = %d\n", $1 -> type);
     switch($1 -> type) {
       case _INT_:
         switch(opc) {
@@ -2664,6 +3030,16 @@ void assignUnary(symrec* $$, symrec* $1, int opc) {
 			printf("Que haces, eso no se puede\n");
 		}
 	break;
+	case _SECTION_:
+		if(opc == '=') {
+			// $$ -> value._int -> al que quieres accesar
+			$$ -> value.array[$$ -> value._int] = (char*)malloc(sizeof(char)*strlen($1 -> name));
+			strcpy($$ -> value.array[$$ -> value._int], $1 -> name);
+		}
+		else {
+			printf("RTFM\n");
+			exit(1);
+		}
       default:
       	printf("Error unario\n");
         printf("Hay un error!\n");
@@ -2672,11 +3048,11 @@ void assignUnary(symrec* $$, symrec* $1, int opc) {
   }
   // Para operaciones binarias
 void assignValue(symrec* a, symrec* b, symrec* c, int opc) {
-	printf("OPC: %d\n", opc);
+	// printf("OPC: %d\n", opc);
 	switch(b -> type) {
 		case _INT_:
-			printf("B: %d\n", b -> value._int);
-			printf("C: %d\n", c -> value._int);
+			// printf("B: %d\n", b -> value._int);
+			// printf("C: %d\n", c -> value._int);
 			switch(opc) {
 				case '+': a -> value._int = b -> value._int + c -> value._int; break;			
 				case '-': a -> value._int = b -> value._int - c -> value._int; break;			
@@ -2711,7 +3087,7 @@ void assignValue(symrec* a, symrec* b, symrec* c, int opc) {
 			}
 			break;
 		case _DOUBLE_:
-			printf("%f / %f\n", b -> value._double, c -> value._double);
+			// printf("%f / %f\n", b -> value._double, c -> value._double);
 			switch(opc) {
 				case '+': a -> value._double = b -> value._double + c -> value._double; break;
 				case '-': a -> value._double = b -> value._double - c -> value._double; break;
@@ -2775,3 +3151,89 @@ void assignValue(symrec* a, symrec* b, symrec* c, int opc) {
 	}
 }
 
+void put_attribute(Section* a, symrec* attribute, symrec* constant) {
+	if(strcmp(attribute -> name, "interval") == 0){
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[0] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "minSectionWidth") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[1] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "requiredFloor") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[2] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "minPathWidth") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[3] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "roughness") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[4] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "curviness") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[5] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "height") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[6] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "fillPercent") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[7] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "smoothCount") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[8] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "x") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[9] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "y") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[10] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "edge") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[11] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "maxPathWidth") == 0) {
+		checkTypes(_INT_, constant -> type);
+		a -> _ints[12] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "seed") == 0) {
+		checkTypes(_DOUBLE_, constant -> type);
+		a -> _floats[0] = constant -> value._double;
+	}
+	else if(strcmp(attribute -> name, "modifier") == 0) {
+		checkTypes(_DOUBLE_, constant -> type);
+		a -> _floats[1] = constant -> value._int;
+	}
+	else if(strcmp(attribute -> name, "fillerTile") == 0) {
+		checkTypes(_STRING_, constant -> type);
+		symrec *aux = getsym(constant -> value._string);
+		if(aux == NULL) {
+			printf("seguro?\n");
+			exit(1);
+		}
+		a -> filler = aux -> value.smart_tile;
+	}
+	else {
+		printf("It's called hentai and is art\n");
+		exit(1);
+	}
+}
+char* resize_string(char *code, int *new_len, int req_len) {
+	while((*new_len) <= req_len) {
+		(*new_len)*=2;
+		code = (char*)realloc((void*)code, *new_len);
+		if(code == NULL) {
+			printf("Error\n");
+			exit(1);
+		}
+	}
+	return code;
+}
