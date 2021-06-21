@@ -74,27 +74,28 @@ extern int yydebug;
     IF = 280,
     ELSE = 281,
     RULE = 282,
-    SMARTTILE = 283,
-    SET = 284,
-    TILE = 285,
-    SECTION = 286,
-    _BEGIN = 287,
-    END = 288,
-    NEW = 289,
-    JOIN = 290,
-    CONTAINER = 291,
-    NAME = 292,
-    TILESET = 293,
-    DEFAULT = 294,
-    GREATER_EQ = 295,
-    LESS_EQ = 296,
-    AND_OP = 297,
-    OR_OP = 298,
-    NEQ = 299,
-    GREATER = 300,
-    LESS = 301,
-    EQ = 302,
-    NEG = 303
+    SECTIONS = 283,
+    SMARTTILE = 284,
+    SET = 285,
+    TILE = 286,
+    SECTION = 287,
+    _BEGIN = 288,
+    END = 289,
+    NEW = 290,
+    JOIN = 291,
+    CONTAINER = 292,
+    NAME = 293,
+    TILESET = 294,
+    DEFAULT = 295,
+    GREATER_EQ = 296,
+    LESS_EQ = 297,
+    AND_OP = 298,
+    OR_OP = 299,
+    NEQ = 300,
+    GREATER = 301,
+    LESS = 302,
+    EQ = 303,
+    NEG = 304
   };
 #endif
 
@@ -165,6 +166,8 @@ union YYSTYPE
   symrec* CONST_STRING;
   /* RULE  */
   symrec* RULE;
+  /* SECTIONS  */
+  symrec* SECTIONS;
   /* variable_declaration  */
   symrec* variable_declaration;
   /* variable  */
@@ -185,7 +188,7 @@ union YYSTYPE
   symrec* tile;
   /* smarttile  */
   symrec* smarttile;
-#line 189 "syntactic_analyzer.tab.h"
+#line 192 "syntactic_analyzer.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

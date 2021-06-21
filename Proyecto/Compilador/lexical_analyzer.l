@@ -85,6 +85,12 @@ SUFFIX (u|U|L|l)*
 	yylval.LONG -> type = _LONG_; 
 	return LONG; 
 	}
+"sections" {
+	yylval.SECTIONS = (symrec*)malloc(sizeof(symrec));
+	// yylval.SECTIONS -> name = (char*)malloc(sizeof(char)*strlen(yytext));
+	strcpy(yylval.SECTIONS -> name, yytext);
+	return SECTIONS; 
+	}
 "else"	     			{ 
 					return ELSE;
 				}
