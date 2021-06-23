@@ -1,0 +1,11 @@
+5
+* + ( a ) 
+3
+P T F
+6
+P P+T
+P T
+T T*F
+T F
+T (P)
+F a

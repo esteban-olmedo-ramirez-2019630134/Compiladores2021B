@@ -6,6 +6,7 @@
 #include <utility>
 #include <string>
 #include <map>
+#include <iostream>
 
 using namespace std;
 
@@ -28,7 +29,7 @@ public:
 	vector<pair<char,string>> getProducciones();
 	void agregarProduccion(char, string);
 	set<char> siguiente(char);
-	set<char> primero(string);
+	set<char> primero(string, set<string>&);
 	vector<char> getAlfabeto();
 };
 

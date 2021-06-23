@@ -1,16 +1,19 @@
 #include "AlgoritmoConstruccionLR0.hpp"
 
+AlgoritmoConstruccionLR0::AlgoritmoConstruccionLR0(map<int,set<ElementoLR>> subconjuntos, map<int,map<char,int>> transiciones):
+		subconjuntos(subconjuntos), transiciones(transiciones) {}
 void AlgoritmoConstruccionLR0::calcularReducir(TablaDeAnalisisSintactico &tabla, GramaticaLibreDeContexto& gl) {
 	int id = 0;
 	map<pair<char,string>,int> idProduccion;
 	for(pair<char,string> produccion : gl.getProducciones()) {
 		idProduccion[produccion] = id++;
 	}
+	tabla.setGramatica(gl);
 	for(pair<int,set<ElementoLR>> subconjunto : subconjuntos ) {
-		for(ElementoLR elemento : subconjunto) {
+		for(ElementoLR elemento : subconjunto.second) {
 			// Tenemos a A -> alpha.
 			if(elemento.getEstadoIndicador() == -1) {
-				pair<char,string> produccion = [elemento.getProduccion()];
+				pair<char,string> produccion = elemento.getProduccion();
 				id = idProduccion[produccion];
 				// Para cada elemento en siguiente(A) añadimos la acción
 				// r(A -> alpha) en la fila del subconjunto actual
@@ -24,20 +27,21 @@ void AlgoritmoConstruccionLR0::calcularReducir(TablaDeAnalisisSintactico &tabla,
 
 void AlgoritmoConstruccionLR0::calcularPrimeros(GramaticaLibreDeContexto& gl) {
 	for(char estado : gl.getAlfabeto()) {
-		if(gl.esTerminal(estado)) {
-			primeros[estado] = gl.primero(estado);
+		if(gl.esNoTerminal(estado)) {
+			set<string> vis;
+			primeros[estado] = gl.primero(string(1,estado), vis);
 		}
 	}
 }
 
 void AlgoritmoConstruccionLR0::calcularDesplazarEIrA(TablaDeAnalisisSintactico& tabla, GramaticaLibreDeContexto& gl) {
-	for(pair<int,map<char,int>> transicion : trancisiones) {
+	for(pair<int,map<char,int>> transicion : transiciones) {
 		for(pair<char,int> actual : transicion.second){
 			if(gl.esNoTerminal(actual.first)) {
-				tabla.aniadirAccion(transicion.first, actual.first, 'd', actual.second);
+				tabla.aniadirEntradaIrA(transicion.first, actual.first, actual.second);
 			}
 			else {
-				tabla.aniadirEntradaIrA(transicion.first, actual.first, actual.second);
+				tabla.aniadirAccion(transicion.first, actual.first, 'd', actual.second);
 			}
 		}
 	}
@@ -50,7 +54,8 @@ TablaDeAnalisisSintactico AlgoritmoConstruccionLR0::correrAlgoritmo(GramaticaLib
 	transiciones = algoritmoSubconjuntos.getTransiciones();
 	TablaDeAnalisisSintactico retorno;
 	calcularPrimeros(gl);
-	calcularReducir(tabla, gl);
-	calcularDesplazarEIrA(tabla,gl);
+	calcularReducir(retorno, gl);
+	calcularDesplazarEIrA(retorno,gl);
+	retorno.setSubconjuntos(subconjuntos);
 	return retorno;
 }

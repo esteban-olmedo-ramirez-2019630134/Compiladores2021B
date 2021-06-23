@@ -11,7 +11,8 @@ private:
 	void calcularReducir(TablaDeAnalisisSintactico&,GramaticaLibreDeContexto&);
 	void calcularPrimeros(GramaticaLibreDeContexto&);
 public:
-	AlgoritmoConstruccionLR0();
+	AlgoritmoConstruccionLR0(map<int,set<ElementoLR>>, map<int,map<char,int>>);
 	TablaDeAnalisisSintactico correrAlgoritmo(GramaticaLibreDeContexto);
+	void calcularDesplazarEIrA(TablaDeAnalisisSintactico&, GramaticaLibreDeContexto&);
 };
 #endif

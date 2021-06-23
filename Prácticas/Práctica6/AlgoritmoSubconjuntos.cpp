@@ -1,7 +1,7 @@
 #include "AlgoritmoSubconjuntos.hpp"
 #include "GramaticaLibreDeContexto.hpp"
 
-AlgoritmoSubconjuntos::AlgoritmoSubconjuntos() {}
+AlgoritmoSubconjuntos::AlgoritmoSubconjuntos() : idKernelActual(0) {}
 
 set<ElementoLR> AlgoritmoSubconjuntos::mover(set<ElementoLR> estado, char simbolo) {
 	set<ElementoLR> kernel;
@@ -20,21 +20,26 @@ set<ElementoLR> AlgoritmoSubconjuntos::cerradura(set<ElementoLR> kernel, Gramati
 	kernelsVisitados[kernel] = idKernelActual;
 	set<ElementoLR> nuevo;
 	queue<ElementoLR> porProcesar;
-	for(ElementoLR elemento : kernel)
+	set<ElementoLR> procesados;
+	for(ElementoLR elemento : kernel) {
 		porProcesar.push(elemento);
+		nuevo.insert(elemento);
+	}
 	while(!porProcesar.empty()) {
 		ElementoLR u = porProcesar.front();
+		procesados.insert(u);
 		porProcesar.pop();
 		char c = u.getEstadoIndicador();
 		if(gramatica.esNoTerminal(c)) {
 			set<ElementoLR> producciones = produccionesIniciales[u.getEstadoIndicador()];
 			for(ElementoLR produccion : producciones) {
-				porProcesar.push(produccion);
-				nuevo.insert(produccion);
+				if(procesados.find(produccion) == procesados.end()){
+					porProcesar.push(produccion);
+					nuevo.insert(produccion);
+				}
 			}
 		}
 	}
-
 	subconjuntos[idKernelActual++] = nuevo;
 	return nuevo;
 }
@@ -62,14 +67,18 @@ void AlgoritmoSubconjuntos::correrAlgoritmo(GramaticaLibreDeContexto& gramatica)
 	set<set<ElementoLR>> procesados;
 	q.push({kernelInicial, conjuntoInicial});
 	while(!q.empty()) {
-		set<ElementoLR> u = q.front().first;
-		procesados.insert(u);
+		set<ElementoLR> u = q.front().second;
+		set<ElementoLR> v = q.front().first;
+		procesados.insert(v);
 		q.pop();
-		int idU = kernelsVisitados[u];
+		int idU = kernelsVisitados[v];
 		for(char simbolo : gramatica.getAlfabeto()) {
 			set<ElementoLR> kernelActual = mover(u, simbolo);
 			// Llamamos a cerradura para que si aún no se ha calculado 
 			// para este kernel, se calcule y se guarde en el map
+			if(kernelActual.size() == 0) {
+				continue;
+			}
 			set<ElementoLR> conjuntoActual = cerradura(kernelActual, gramatica);
 			if(procesados.find(kernelActual) == procesados.end()) {
 				q.push({kernelActual,conjuntoActual});

@@ -5,15 +5,17 @@ bool GramaticaLibreDeContexto::esTerminal(char c) {
 	return terminales.find(c) != terminales.end();
 }
 bool GramaticaLibreDeContexto::esNoTerminal(char c) {
-	return noTerminales.find(c) != terminales.end();
+	return noTerminales.find(c) != noTerminales.end();
 }
 char GramaticaLibreDeContexto::getEstadoInicial() {
 	return this -> estadoInicial;
 }
 void GramaticaLibreDeContexto::agregarEstadoTerminal(char c) {
+	alfabeto.push_back(c);
 	terminales.insert(c);
 }
 void GramaticaLibreDeContexto::agregarEstadoNoTerminal(char c) {
+	alfabeto.push_back(c);
 	noTerminales.insert(c);
 }
 void GramaticaLibreDeContexto::setEstadoInicial(char estadoInicial) {
@@ -26,11 +28,15 @@ void GramaticaLibreDeContexto::agregarProduccion(char c, string s) {
 	producciones.emplace_back(c, s);
 };
 
-set<char> GramaticaLibreDeContexto::primero(string estado) {
+set<char> GramaticaLibreDeContexto::primero(string estado, set<string> &visitados) {
 	set<char> retorno;
 	bool conjuntoSinEpsilon = false;
+	if(visitados.find(estado) != visitados.end()) {
+		return retorno;
+	}
+	visitados.insert(estado);
 	// Si es un estado terminal tenemos el caso base
-	if(estado.size() == 1 && esTerminal(estado[0])) {
+	if(esTerminal(estado[0])) {
 		retorno.insert(estado[0]);
 		return retorno;
 	}
@@ -39,7 +45,7 @@ set<char> GramaticaLibreDeContexto::primero(string estado) {
 		for(pair<char,string> produccion : producciones) {
 			if(produccion.first == actual) {
 				for(char c : produccion.second) {
-					set<char> auxiliar = primero(string(1,c));
+					set<char> auxiliar = primero(string(1,c), visitados);
 					for(char c : auxiliar) {
 						if(c != 'E') {
 							retorno.insert(c);
@@ -102,7 +108,8 @@ set<char> GramaticaLibreDeContexto::siguiente(char estado, map<char,set<char>>& 
 					// primero(beta)
 					else {
 						set<char> auxiliar;
-						auxiliar = primero(produccion.second.substr(i+1,produccion.second.size()-i+1));
+						set<string> vis;
+						auxiliar = primero(produccion.second.substr(i+1,produccion.second.size()-i+1), vis);
 						for(char c : auxiliar) {
 							if(c != 'E') {
 								retorno.insert(c);
@@ -111,7 +118,8 @@ set<char> GramaticaLibreDeContexto::siguiente(char estado, map<char,set<char>>& 
 						// Si primero(beta) contiene a épsilon, entonces calculamos 
 						// siguiente(A)
 						if(retorno.find('E') != retorno.end()) {
-							auxiliar = primero(string(1,produccion.first));
+							set<string> vis;
+							auxiliar = primero(string(1,produccion.first), vis);
 							for(char c : auxiliar) {
 								retorno.insert(c);
 							}

@@ -16,11 +16,31 @@ void ElementoLR::moverIndicador() {
 
 bool ElementoLR::operator<(const ElementoLR& lr) const{
 	if(this -> produccion.first == lr.produccion.first) {
-		return this -> indicador < lr.indicador;
+		if(this -> produccion.second == lr.produccion.second){
+			return this -> indicador < lr.indicador;
+		}
+		else{
+			return produccion.second < lr.produccion.second;
+		}
 	}
-	return this -> produccion.first < lr.produccion.first;
+	else{
+		return this -> produccion.first < lr.produccion.first;
+	}
 }
 
 pair<char,string> ElementoLR::getProduccion() {
 	return this -> produccion;
+}
+
+void ElementoLR::imprimir() {
+	cout << produccion.first << " -> ";
+	for(int i = 0; i < produccion.second.size(); i++) {
+		if(i == indicador) {
+			cout << ".";
+		}
+		cout << produccion.second[i];
+	}
+	if(indicador == produccion.second.size())
+		cout << ".";
+	cout << '\n';
 }

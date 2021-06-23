@@ -2,6 +2,8 @@
 #include <string>
 #include "AlgoritmoSubconjuntos.hpp"
 #include "GramaticaLibreDeContexto.hpp"
+#include "AlgoritmoConstruccionLR0.hpp"
+#include "TablaDeAnalisisSintactico.hpp"
 #include <set>
 
 
@@ -9,7 +11,7 @@ using namespace std;
 
 int main() {
 	GramaticaLibreDeContexto gramatica;
-	AlgoritmoSubconjuntos algo;
+	AlgoritmoSubconjuntos algoSubconjuntos;
 	int n;
 	cout << "Ingresa el número de estados terminales: ";
 	cin >> n;
@@ -36,8 +38,13 @@ int main() {
 		cin >> c >> s;
 		gramatica.agregarProduccion(c, s);
 	}
-	set<char> aux = gramatica.primero(string("B"));
-	for(char c : aux) cout << c << ' '; cout << '\n';
-	// algo.correrAlgoritmo(gramatica);
+	// set<char> aux = gramatica.primero(string("B"));
+	// for(char c : aux) cout << c << ' '; cout << '\n';
+	algoSubconjuntos.correrAlgoritmo(gramatica);
+	AlgoritmoConstruccionLR0 algoConst(algoSubconjuntos.getSubconjuntos(), algoSubconjuntos.getTransiciones());
+	TablaDeAnalisisSintactico tabla = algoConst.correrAlgoritmo(gramatica);
+	tabla.mostrar();
+	cout << "----- Subconjuntos ----" << endl;
+	tabla.imprimirConjuntos();
 	return 0;
 }

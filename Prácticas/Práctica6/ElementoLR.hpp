@@ -2,6 +2,7 @@
 #define __ELEMENTOLR_HPP__
 #include <utility>
 #include <string>
+#include <iostream>
 using namespace std;
 /*
  *	Vamos a representar los estados con letras, un estado final será una
@@ -17,6 +18,7 @@ public:
 	void moverIndicador();
 	bool operator<(const ElementoLR&)const;
 	pair<char,string> getProduccion();
+	void imprimir();
 };
 
 #endif
