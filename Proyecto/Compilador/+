@@ -49,7 +49,7 @@
 %nterm <int> logical_operator comparation_operator
 %nterm <TileList*> tiles_list
 %nterm <Tile*> tile_content
-%nterm <symrec*> smarttile join
+%nterm <symrec*> smarttile
 %nterm <Section*> section_declaration
 
 %token FUNCTION
@@ -72,7 +72,8 @@
 %%
 // declaracion inicial main
 input
-	: set_size initial_declaration main_function 		{
+	: %empty
+	| set_size initial_declaration main_function 		{
 		char *code3 = pop(&pila_codigo);
 		char *code2 = pop(&pila_codigo);
 		char *code1 = pop(&pila_codigo);
@@ -264,7 +265,7 @@ tile_content
 	;
 
 main_function
-	: MAIN  code_block  	 	{
+	: MAIN '{' statement '}'  	{
 			char *code1 = pop(&pila_codigo);
 			char *code = (char*)malloc(sizeof(char)*(strlen(code1) + 100));
 			sprintf(code, "public void CreateMap(){%s}",code1);
@@ -272,7 +273,7 @@ main_function
 					}
 	;
 code_block
-	: '{'statement_list'}'              {}
+	: '{'statement'}'              	{}
 	| '{''}'			{}
 
 	| error                  	{ yyerrok; }
@@ -315,71 +316,55 @@ vector
 			push(&pila_codigo, code);
 							}
 	;
-statement_list 
-	: statement_list statement 		{
-		char *code2 = pop(&pila_codigo);
-		char *code1 = pop(&pila_codigo);
-		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2)+5));
-		sprintf(code, "%s%s", code1, code2);
-		push(&pila_codigo, code);
-						}
-	| statement				{}
 statement
-	: variable_declaration ';'  {
+	: variable_declaration ';'  	{
 			char *code1 = pop(&pila_codigo);
 			char *code = (char*)malloc(sizeof(char)*(strlen(code1) + 10));
 			sprintf(code, "%s", code1);
 			push(&pila_codigo, code);
 					}
-	| for          			{ }
-	| while        			{ }
-	| if		           	{ }
-	| join	    ';'			{ }
+	| for          			{}
+	| while        			{}
+	| if           			{}
 	| expression';'	 		{	
 			char *code1 = pop(&pila_codigo);
 			char *code = (char*)malloc(sizeof(char)*(strlen(code1) + 10));
 			sprintf(code, "%s;", code1);
 			push(&pila_codigo, code);
 					}
+	| statement statement 		{
+		char *code2 = pop(&pila_codigo);
+		char *code1 = pop(&pila_codigo);
+		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2)+5));
+		sprintf(code, "%s%s", code1, code2);
+		push(&pila_codigo, code);
+					}
+
 	;
-join 
-	: JOIN'('expression','CONST_CHAR ',' expression')' {
-			if($3 -> type != _INT_ || $7 -> type != _INT_) {
-				printf("Error en acceso a las secciones\n");
+/*
+join
+	: JOIN '(' expression ',' expression','CONST_CHAR')'  {
+			char *code2 = pop(&pila_codigo);
+			char *code1 = pop(&pila_codigo);
+			char *code = (char*)malloc(sizeof(char)*(strlen(code2)+strlen(code1) + 100));
+			int direccion = 0;
+			if($3 -> type != _INT_ || $5 -> type != _INT_) {
+				printf("NO se puede\n");
+				printf("No puedes unir otra cosa que no sean secciones\n");
 				exit(1);
 			}
-			symrec *aux = getsym("sections");
-			if(aux == NULL) {
-				printf("No has declarado sections!\n");
-				exit(1);
-			}
-			int direccion;
-			switch($5 -> value._char) {
-				case 'l': direccion = 0; break;
+			switch($7 -> value._char){
 				case 'u': direccion = 1; break;
 				case 'r': direccion = 2; break;
 				case 'd': direccion = 3; break;
-				default:
-					printf("No te chifles\n");
-					exit(1);
+				case 'l': direccion = 0; break;
+				default: printf("La direccion que usaste es incorrecta\n");
 			}
-			$$ -> type = _SECTION_;
-			char *code2 = pop(&pila_codigo);
-			char *code1 = pop(&pila_codigo);
-			char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + 100));
-			sprintf(code, 
-				"sections[%s].neighbors[%d]=sections[%s].id;sections[%s].neighbors[%d]=sections[%s].id;",
-				code1,
-				direccion,
-				code2,
-				code2,
-				(direccion+2)%4,
-				code1
-			);
+			sprintf(code,"sections[%s].neighbors[%d] = sections[%s].id;", code1, direccion, code2);
 			push(&pila_codigo, code);
-		}
+					}
 	;
-
+*/
 variable_declaration
 	: type variable '=' expression             	{
 		if(getsym($2 -> name) != NULL) {
@@ -457,6 +442,7 @@ variable_declaration
 		);
 		push(&pila_codigo, code);	
 							}
+	//| join						{}
 	;
 variable
 	: IDENTIFIER					{
@@ -517,11 +503,13 @@ expression
 		checkTypes($1 -> type, $3 -> type);
 		$$ -> type = $1 -> type;
 		assignValue($$, $1, $3, '+');
+		// printf("expresion + expresion\n"); 
 		char *code2 = pop(&pila_codigo);
 		char *code1 = pop(&pila_codigo);
 		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + 4));
 		sprintf(code, "%s+%s", code1, code2);
 		push(&pila_codigo, code);
+
 		
 							}
 	| expression '-' expression      		{ 
@@ -535,6 +523,8 @@ expression
 		char *code = (char*)malloc(sizeof(char)*(strlen(code1) + strlen(code2) + 4));
 		sprintf(code, "%s-%s", code1, code2);
 		push(&pila_codigo, code);
+
+          	// printf("expresion - expresion\n"); 
               						}
 	| expression '*' expression      		{ 
 		$$ = (symrec*)malloc(sizeof(symrec));
@@ -649,6 +639,38 @@ expression
 		sprintf(code, "%s=%s", code1, code2);
 		push(&pila_codigo, code);
 					      		}
+	| J_SECTIONS'{'CONST_INT','CONST_CHAR '}' '=' CONST_INT {
+			/*if($3 -> type != _INT_) {
+				printf("Error en acceso a las secciones\n");
+				exit(1);
+			}*/
+			symrec *aux = getsym("sections");
+			if(aux == NULL) {
+				printf("No has declarado sections!\n");
+				exit(1);
+			}
+			int direccion;
+			switch($5 -> value._char) {
+				case 'l': direccion = 0; break;
+				case 'u': direccion = 1; break;
+				case 'r': direccion = 2; break;
+				case 'd': direccion = 3; break;
+				default:
+					printf("No te chifles\n");
+					exit(1);
+			}
+			$$ -> type = _SECTION_;
+			// char *code1 = pop(&pila_codigo);
+			char *code = (char*)malloc(sizeof(char)*(/*strlen(code1)*/ + 100));
+			sprintf(code, 
+				"sections[%d].neighbors[%d] = sections[%d].id;",
+				$3 -> value._int,
+				direccion,
+				$8 -> value._int
+			);
+			push(&pila_codigo, code);
+			printf("Salimos\n");
+		}
 	| SECTIONS '[' expression ']' '=' variable 	{
 			if($3 -> type != _INT_) {
 				printf("Error en acceso a las secciones\n");
@@ -1244,7 +1266,7 @@ char* resize_string(char *code, int *new_len, int req_len) {
 	return code;
 }
 void print_template() {
-	printf("using System.Collections.Generic;using UnityEngine;using UnityEditor;using UnityEngine.Tilemaps;public class MapGenerator : MonoBehaviour {  private Dictionary<string, Template> templates {    get;    set;  } private List<Section> sections {    get;    set;  }[Header(\"Reference here your Tilemap\")]public Tilemap tilemap;  public int width {    get;    set;  } public int height {    get;    set;  }  bool[] visited;  public void ClearMap() {    tilemap.ClearAllTiles();  } public void Generate() {     visited = new bool[sections.Count];    List<ConectedComponent> components = new List<ConectedComponent>();    for (int i = 0; i < sections.Count; i++) {      visited[i] = false;    }    for (int i = 0; i < sections.Count; i++) {      if(!visited[i]) {        sections[i].x = 0;        sections[i].y = 0;        ConectedComponent current = new ConectedComponent {origin = new int[2] {0, 0},corner = new int[2] {width - 1, height - 1},elements = new List<int>()};        Dfs(i, current);        components.Add(current);      }    }    int[] origin = new int[] {0, 0};    for (int i = 0; i < components.Count; i++) {      MoveCoords(components[i], origin);      origin[0] = components[i].corner[0];    }    int mapWidth = origin[0] + width;    int mapHeight = origin[1] + height;    for (int k = 0; k < sections.Count; k++) {      TileBase tile = Resources.Load<TileBase>(RuleTileGenerator.RULE_TILES_PATH + sections[k].filler) as TileBase;      if(tile == null) {        Debug.Log(\"Resource tile load failed\");      }      for (int i = 0; i < width; i++) {        for (int j = 0; j < height; j++) {          int x = sections[k].x + i;          int y = sections[k].y + j;          if(sections[k].map[i, j] == 1) {            tilemap.SetTile(new Vector3Int(x, y, 0), tile);          }        }      }    }  } private void MoveCoords(ConectedComponent component, int[] origin) {    int Cx = component.origin[0] - origin[0];    int Cy = component.origin[1] - origin[1];    for (int i = 0; i < component.elements.Count; i++) {      int idx = component.elements[i];      sections[idx].x = sections[idx].x - Cx;      sections[idx].y = sections[idx].y - Cy;    }    component.origin[0] = component.origin[0] - Cx;    component.origin[1] = component.origin[1] - Cy;    component.corner[0] = component.corner[0] - Cx;    component.corner[1] = component.corner[1] - Cy;  }"); 
-	printf("private void Join(ConectedComponent component, Section origin, Section destiny, int direction) {    if (direction == 0) {      destiny.x = origin.x - width;      destiny.y = origin.y;    }    else if (direction == 1) {      destiny.x = origin.x;      destiny.y = origin.y + height;    }    else if (direction == 2) {      destiny.x = origin.x + width;      destiny.y = origin.y;    }    else {      destiny.x = origin.x;      destiny.y = origin.y - height;    }    component.origin[0] = Min(origin.x, destiny.x);    component.origin[1] = Min(origin.y, destiny.y);    component.corner[0] = Max(origin.x, destiny.x) + width;    component.corner[1] = Max(origin.y, destiny.y) + height;  } private void Dfs(int node, ConectedComponent current) {    visited[node] = true;    current.elements.Add(node);    for (int i = 0; i < 4; i++) {      int nextNode = sections[node].neighbors[i];      if (nextNode == -1) {        continue;      }      if (!visited[nextNode]) {        Join(current, sections[node], sections[nextNode], i);        Dfs(nextNode, current);      }    }  } private int Min(int a, int b) {    if(a < b) return a;    return b;  } private int Max(int a, int b) {    if(a > b) return a;    return b;  }"); 
+	printf("using System.Collections.Generic;using UnityEngine;using UnityEditor;using UnityEngine.Tilemaps;public class MapGenerator : MonoBehaviour{private Dictionary<string, Template> templates { get; set; }private List<Section> sections { get; set; }[Header(\"Reference here your Tilemap\")]public Tilemap tilemap;public int width { get; set; }public int height { get; set; }public void ClearMap(){tilemap.ClearAllTiles();}public void Generate(){bool[] visited = new bool[sections.Count];List<ConectedComponent> components = new List<ConectedComponent>();for (int i = 0; i < sections.Count; i++){visited[i] = false;}for (int i = 0; i < sections.Count; i++){if(!visited[i]){ConectedComponent current = new ConectedComponent{origin = new int[2] {0, 0},corner = new int[2] {width - 1, height - 1},elements = new List<int>()};Dfs(i, visited, current);components.Add(current);}}int[] origin = new int[] {0, 0};for (int i = 0; i < components.Count; i++){MoveCoords(components[i], origin);origin[0] = components[i].corner[0] + 1;}int mapWidth = origin[0] + width;int mapHeight = origin[1] + height;for (int k = 0; k < sections.Count; k++){TileBase tile = Resources.Load<TileBase>(RuleTileGenerator.RULE_TILES_PATH + sections[k].filler) as TileBase;Debug.Log(\"processing section: \" + k);if(tile == null){Debug.Log(\"Resource tile load failed\");}for (int i = 0; i < width; i++){for (int j = 0; j < height; j++){int x = sections[k].x + i;int y = sections[k].y + j;if(sections[k].map[i, j] == 1){tilemap.SetTile(new Vector3Int(x, y, 0), tile);}}}}}private void MoveCoords(ConectedComponent component, int[] origin){int Cx = component.origin[0] - origin[0];int Cy = component.origin[1] - origin[1];for (int i = 0; i < component.elements.Count; i++){int idx = component.elements[i];sections[idx].x = sections[idx].x - Cx;sections[idx].y = sections[idx].y - Cy;}component.origin[0] = component.origin[0] - Cx;component.origin[1] = component.origin[1] - Cy;component.corner[0] = component.corner[0] - Cx;component.corner[1] = component.corner[1] - Cy;}private void Join(ConectedComponent component, Section origin, Section destiny, int direction){if (direction == 0){destiny.x = origin.x - width;destiny.y = origin.y;}else if (direction == 1){destiny.x = origin.x;destiny.y = origin.y + height;}else if (direction == 2){destiny.x = origin.x + width;destiny.y = origin.y;}else{destiny.x = origin.x;destiny.y = origin.y - height;}component.origin[0] = Min(origin.x, destiny.x);component.origin[1] = Min(origin.y, destiny.y);component.corner[0] = Max(origin.x, destiny.x) + width;component.corner[1] = Max(origin.y, destiny.y) + height;}");
+	printf("private void Dfs(int node, bool[] visited, ConectedComponent current){visited[node] = true;current.elements.Add(node);for (int i = 0; i < 4; i++){int nextNode = sections[node].neighbors[i];if (nextNode == -1){continue;}if (!visited[nextNode]){Join(current, sections[node], sections[nextNode], i);Dfs(nextNode, visited, current);}}}private int Min(int a, int b){if(a < b) return a;return b;}private int Max(int a, int b){if(a > b) return a;return b;}");
 }
 

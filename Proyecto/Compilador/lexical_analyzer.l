@@ -85,9 +85,13 @@ SUFFIX (u|U|L|l)*
 	yylval.LONG -> type = _LONG_; 
 	return LONG; 
 	}
+"j_sections" {
+	yylval.J_SECTIONS = (symrec*)malloc(sizeof(symrec));
+	strcpy(yylval.J_SECTIONS -> name, yytext);
+	return J_SECTIONS; 
+}
 "sections" {
 	yylval.SECTIONS = (symrec*)malloc(sizeof(symrec));
-	// yylval.SECTIONS -> name = (char*)malloc(sizeof(char)*strlen(yytext));
 	strcpy(yylval.SECTIONS -> name, yytext);
 	return SECTIONS; 
 	}
@@ -99,14 +103,14 @@ SUFFIX (u|U|L|l)*
 					strcpy(yylval.ALGORITHM, "PerlinNoise");
 					return ALGORITHM;
 				}
-"SmoothedPerlinNoise"		{
-					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("SmoothedPerlinNoise"));
-					strcpy(yylval.ALGORITHM, "SmoothedPerlinNoise");
+"PerlinNoiseSmoothed"		{
+					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("PerlinNoiseSmoothed"));
+					strcpy(yylval.ALGORITHM, "PerlinNoiseSmoothed");
 					return ALGORITHM;
 				}
-"SmoothedRandomWalk"		{
+"RandomWalkSmoothed"		{
 					yylval.ALGORITHM = (char*)malloc(sizeof(char)*strlen("SmoothedRandomWalk"));
-					strcpy(yylval.ALGORITHM, "SmoothedRandomWalk");
+					strcpy(yylval.ALGORITHM, "RandomWalkSmoothed");
 					return ALGORITHM;
 				}
 "PerlinNoiseCave"		{
@@ -195,7 +199,7 @@ SUFFIX (u|U|L|l)*
 	strcpy(yylval.CONST_STRING -> value._string, yytext);
 	return CONST_STRING; 
 	}
-'(\\.|[^\\"])*'            	{
+'(\\.|[^\\"])'            	{
 	yylval.CONST_CHAR = (symrec*)malloc(sizeof(symrec));
 	yylval.CONST_CHAR -> value._char = yytext[1];
 	return CONST_CHAR; 
@@ -225,6 +229,8 @@ SUFFIX (u|U|L|l)*
 "["  { return '['; }
 "]"  { return ']'; }
 ":"  { return ':'; }
+"$"  { return '$'; }
+"?"  { return '?'; }
 
 "//"*
 .
