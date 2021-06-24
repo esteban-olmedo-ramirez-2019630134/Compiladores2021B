@@ -17,7 +17,7 @@ void AlgoritmoConstruccionLR0::calcularReducir(TablaDeAnalisisSintactico &tabla,
 				id = idProduccion[produccion];
 				// Para cada elemento en siguiente(A) añadimos la acción
 				// r(A -> alpha) en la fila del subconjunto actual
-				for(char c : primeros[produccion.first]) {
+				for(char c : siguientes[produccion.first]) {
 					tabla.aniadirAccion(subconjunto.first, c, 'r', id);
 				}
 			}
@@ -28,8 +28,7 @@ void AlgoritmoConstruccionLR0::calcularReducir(TablaDeAnalisisSintactico &tabla,
 void AlgoritmoConstruccionLR0::calcularPrimeros(GramaticaLibreDeContexto& gl) {
 	for(char estado : gl.getAlfabeto()) {
 		if(gl.esNoTerminal(estado)) {
-			set<string> vis;
-			primeros[estado] = gl.primero(string(1,estado), vis);
+			siguientes[estado] = gl.siguiente(estado);
 		}
 	}
 }

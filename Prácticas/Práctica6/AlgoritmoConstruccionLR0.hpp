@@ -7,7 +7,7 @@ class AlgoritmoConstruccionLR0 {
 private:
 	map<int,set<ElementoLR>> subconjuntos;
 	map<int,map<char,int>> transiciones;
-	map<char,set<char>> primeros;
+	map<char,set<char>> siguientes;
 	void calcularReducir(TablaDeAnalisisSintactico&,GramaticaLibreDeContexto&);
 	void calcularPrimeros(GramaticaLibreDeContexto&);
 public:
